@@ -35,3 +35,4 @@ src/plugins/*/
 !src/plugins/example/
 /plans
 /AGENTS.md
+/.history

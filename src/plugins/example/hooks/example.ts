@@ -1,4 +1,3 @@
-import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { ExampleData, ExampleListParams, ExampleListResult, ExampleResult } from '../api/example';
 import {
@@ -9,8 +8,7 @@ import {
     getExample
 } from '../api/example';
 
-// 也可以使用hooks的方式定义以下的状态和方法
-export const useExamplePluginStore = defineStore('example-plugin', () => {
+export const useExamplePluginHook = () => {
     // State
     const dataList = ref<ExampleData[]>([]);
     const loading = ref<boolean>(false);
@@ -21,7 +19,7 @@ export const useExamplePluginStore = defineStore('example-plugin', () => {
         name?: string;
     }>({});
 
-    // Getters
+    // Computed
     const getDataList = computed(() => dataList.value);
     const isLoading = computed(() => loading.value);
     const getTotal = computed(() => total.value);
@@ -95,7 +93,7 @@ export const useExamplePluginStore = defineStore('example-plugin', () => {
     };
 
     // 根据ID获取用户详情
-    const getDetail = async (id: number) : Promise<ExampleResult> => {
+    const getDetail = async (id: number): Promise<ExampleResult> => {
         try {
             const response = await getExample(id);
             return response;
@@ -103,7 +101,7 @@ export const useExamplePluginStore = defineStore('example-plugin', () => {
             throw error;
         }
     };
-    
+
     // 重置搜索条件
     const resetSearchParams = () => {
         searchParams.value = {};
@@ -119,7 +117,7 @@ export const useExamplePluginStore = defineStore('example-plugin', () => {
         pageSize,
         searchParams,
 
-        // Getters
+        // Computed
         getDataList,
         isLoading,
         getTotal,
@@ -135,4 +133,4 @@ export const useExamplePluginStore = defineStore('example-plugin', () => {
         resetSearchParams,
         getDetail
     };
-});
+};

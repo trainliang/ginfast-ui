@@ -60,19 +60,21 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useExamplePluginStore } from '../store/example';
+import { useExamplePluginHook } from '../hooks/example';
 import type { ExampleData } from '../api/example';
-import { storeToRefs } from 'pinia';
-const exampleStore = useExamplePluginStore();
 const {
+    dataList,
+    loading,
+    total,
+    currentPage,
+    pageSize,
     fetchDataList,
     createData,
     updateData,
     deleteData,
     getDetail,
     resetSearchParams
-} = exampleStore;
-const { dataList, loading, total, currentPage, pageSize } = storeToRefs(exampleStore);
+} = useExamplePluginHook();
 
 
 const modalVisible = ref(false);
