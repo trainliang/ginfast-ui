@@ -1,91 +1,67 @@
 import { http } from "@/utils/http";
-import { baseUrlApi } from "../utils";
 import { BaseResult } from "../types";
+import { baseUrlApi } from "../utils";
+import type { EduImportResultData } from "./student";
 
 export interface EduRoomWeeklyRule {
   id?: number;
   roomId?: number;
-  weekDay?: number;
+  weekday: number;
   startTime: string;
   endTime: string;
-  courseId?: number;
-  classId?: number;
-  enabled?: boolean;
+  available?: number;
   remark?: string;
-  [key: string]: unknown;
 }
 
 export interface EduRoomException {
   id?: number;
   roomId?: number;
-  ruleId?: number;
   exceptionDate: string;
+  type: string;
   startTime?: string;
   endTime?: string;
   reason?: string;
-  status?: number;
-  [key: string]: unknown;
 }
 
 export interface EduRoomItem {
   id: number;
   createdAt?: string;
   updatedAt?: string;
-  deletedAt?: string | null;
-  roomName: string;
-  roomCode?: string;
+  name: string;
+  code: string;
+  type?: string;
+  capacity: number;
   location?: string;
-  capacity?: number;
   status?: number;
-  description?: string;
-  weeklyRules?: EduRoomWeeklyRule[];
-  exceptions?: EduRoomException[];
-  [key: string]: unknown;
+  remark?: string;
 }
 
 export interface EduRoomListParams {
   pageNum?: number;
   pageSize?: number;
   order?: string;
-  roomName?: string;
-  roomCode?: string;
-  location?: string;
+  name?: string;
+  code?: string;
+  type?: string;
   status?: number;
+  location?: string;
 }
 
-export interface EduRoomAddParams {
-  roomName: string;
-  roomCode?: string;
-  location?: string;
-  capacity?: number;
-  status?: number;
-  description?: string;
-  [key: string]: unknown;
-}
+export type EduRoomAddParams = Omit<EduRoomItem, "id" | "createdAt" | "updatedAt">;
 
 export interface EduRoomUpdateParams extends EduRoomAddParams {
   id: number;
 }
 
-export type EduRoomImportRow = EduRoomAddParams & {
-  id?: number;
-};
-
-export type EduRoomWeeklyRuleImportRow = EduRoomWeeklyRule;
-
-export type EduRoomExceptionImportRow = EduRoomException;
-
+export type EduRoomImportRow = Partial<EduRoomAddParams>;
+export type EduRoomWeeklyRuleImportRow = Partial<EduRoomWeeklyRule>;
+export type EduRoomExceptionImportRow = Partial<EduRoomException>;
 export type EduRoomExportRow = EduRoomItem;
 
-export type EduRoomWeeklyRuleExportRow = EduRoomWeeklyRule;
-
-export type EduRoomExceptionExportRow = EduRoomException;
-
 export interface EduRoomOptionItem {
-  label: string;
-  value: number | string;
-  disabled?: boolean;
-  [key: string]: unknown;
+  id: number;
+  name: string;
+  code: string;
 }
 
 export type EduRoomListResult = BaseResult<{
@@ -94,105 +70,92 @@ export type EduRoomListResult = BaseResult<{
 }>;
 
 export type EduRoomDetailResult = BaseResult<EduRoomItem>;
-
 export type EduRoomOptionsResult = BaseResult<{
   list: EduRoomOptionItem[];
 }>;
-
 export type EduRoomWeeklyRuleResult = BaseResult<{
   list: EduRoomWeeklyRule[];
+  total: number;
 }>;
-
 export type EduRoomExceptionResult = BaseResult<{
   list: EduRoomException[];
+  total: number;
 }>;
-
-export type EduRoomImportResult = BaseResult<{
-  rows: EduRoomImportRow[];
-}>;
-
-export type EduRoomWeeklyRuleImportResult = BaseResult<{
-  rows: EduRoomWeeklyRuleImportRow[];
-}>;
-
-export type EduRoomExceptionImportResult = BaseResult<{
-  rows: EduRoomExceptionImportRow[];
-}>;
-
+export type EduRoomImportResult = BaseResult<EduImportResultData>;
+export type EduRoomWeeklyRuleImportResult = BaseResult<EduImportResultData>;
+export type EduRoomExceptionImportResult = BaseResult<EduImportResultData>;
 export type EduRoomExportResult = BaseResult<{
   list: EduRoomExportRow[];
 }>;
 
-export type EduRoomWeeklyRuleExportResult = BaseResult<{
-  list: EduRoomWeeklyRuleExportRow[];
-}>;
-
-export type EduRoomExceptionExportResult = BaseResult<{
-  list: EduRoomExceptionExportRow[];
-}>;
-
 export const getEduRoomListAPI = (params?: EduRoomListParams) => {
-  return http.request<EduRoomListResult>("get", baseUrlApi("eduRoom/list"), { params });
+  return http.request<EduRoomListResult>("get", baseUrlApi("edu/rooms/list"), { params });
 };
 
 export const getEduRoomOptionsAPI = () => {
-  return http.request<EduRoomOptionsResult>("get", baseUrlApi("eduRoom/options"));
+  return http.request<EduRoomOptionsResult>("get", baseUrlApi("edu/rooms/options"));
 };
 
 export const getEduRoomDetailAPI = (id: number) => {
-  return http.request<EduRoomDetailResult>("get", baseUrlApi(`eduRoom/${id}`));
+  return http.request<EduRoomDetailResult>("get", baseUrlApi(`edu/rooms/${id}`));
 };
 
 export const addEduRoomAPI = (data: EduRoomAddParams) => {
-  return http.request<BaseResult>("post", baseUrlApi("eduRoom/add"), { data });
+  return http.request<BaseResult>("post", baseUrlApi("edu/rooms/add"), { data });
 };
 
 export const editEduRoomAPI = (data: EduRoomUpdateParams) => {
-  return http.request<BaseResult>("put", baseUrlApi("eduRoom/edit"), { data });
+  return http.request<BaseResult>("put", baseUrlApi("edu/rooms/edit"), { data });
 };
 
 export const deleteEduRoomAPI = (data: { id: number }) => {
-  return http.request<BaseResult>("delete", baseUrlApi("eduRoom/delete"), { data });
+  return http.request<BaseResult>("delete", baseUrlApi("edu/rooms/delete"), { data });
 };
 
 export const importEduRoomAPI = (rows: EduRoomImportRow[]) => {
-  return http.request<EduRoomImportResult>("post", baseUrlApi("eduRoom/import"), {
-    data: { rows }
+  return http.request<EduRoomImportResult>("post", baseUrlApi("edu/rooms/import"), {
+    data: { rows },
   });
 };
 
-export const exportEduRoomAPI = (params?: EduRoomListParams) => {
-  return http.request<EduRoomExportResult>("get", baseUrlApi("eduRoom/export"), { params });
+export const exportEduRoomAPI = (params?: { ids?: number[] }) => {
+  return http.request<EduRoomExportResult>("get", baseUrlApi("edu/rooms/export"), { params });
 };
 
 export const getEduRoomWeeklyRulesAPI = (roomId: number) => {
-  return http.request<EduRoomWeeklyRuleResult>("get", baseUrlApi(`eduRoom/weeklyRules/${roomId}`));
+  return http.request<EduRoomWeeklyRuleResult>("get", baseUrlApi(`edu/rooms/${roomId}/weekly-rules`));
 };
 
-export const saveEduRoomWeeklyRulesAPI = (data: { roomId: number; rows: EduRoomWeeklyRule[] }) => {
-  return http.request<BaseResult>("post", baseUrlApi("eduRoom/weeklyRules/saveWeeklyRules"), { data });
+export const saveEduRoomWeeklyRulesAPI = (roomId: number, rows: EduRoomWeeklyRule[]) => {
+  return http.request<BaseResult>("post", baseUrlApi(`edu/rooms/${roomId}/weekly-rules/save`), {
+    data: { rows },
+  });
 };
 
-export const addEduRoomExceptionAPI = (data: EduRoomException) => {
-  return http.request<BaseResult>("post", baseUrlApi("eduRoom/exceptions/addException"), { data });
+export const getEduRoomExceptionsAPI = (roomId: number) => {
+  return http.request<EduRoomExceptionResult>("get", baseUrlApi(`edu/rooms/${roomId}/exceptions`));
 };
 
-export const editEduRoomExceptionAPI = (data: EduRoomException) => {
-  return http.request<BaseResult>("put", baseUrlApi("eduRoom/exceptions/editException"), { data });
+export const addEduRoomExceptionAPI = (roomId: number, data: EduRoomException) => {
+  return http.request<BaseResult>("post", baseUrlApi(`edu/rooms/${roomId}/exceptions/add`), { data });
 };
 
-export const deleteEduRoomExceptionAPI = (data: { id: number }) => {
-  return http.request<BaseResult>("delete", baseUrlApi("eduRoom/exceptions/deleteException"), { data });
+export const editEduRoomExceptionAPI = (roomId: number, data: EduRoomException) => {
+  return http.request<BaseResult>("put", baseUrlApi(`edu/rooms/${roomId}/exceptions/edit`), { data });
+};
+
+export const deleteEduRoomExceptionAPI = (roomId: number, data: { id: number }) => {
+  return http.request<BaseResult>("delete", baseUrlApi(`edu/rooms/${roomId}/exceptions/delete`), { data });
 };
 
 export const importEduRoomWeeklyRulesAPI = (rows: EduRoomWeeklyRuleImportRow[]) => {
-  return http.request<EduRoomWeeklyRuleImportResult>("post", baseUrlApi("eduRoom/importWeeklyRules"), {
-    data: { rows }
+  return http.request<EduRoomWeeklyRuleImportResult>("post", baseUrlApi("edu/rooms/weekly-rules/import"), {
+    data: { rows },
   });
 };
 
 export const importEduRoomExceptionsAPI = (rows: EduRoomExceptionImportRow[]) => {
-  return http.request<EduRoomExceptionImportResult>("post", baseUrlApi("eduRoom/importExceptions"), {
-    data: { rows }
+  return http.request<EduRoomExceptionImportResult>("post", baseUrlApi("edu/rooms/exceptions/import"), {
+    data: { rows },
   });
 };

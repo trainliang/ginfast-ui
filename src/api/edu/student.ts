@@ -1,14 +1,29 @@
 import { http } from "@/utils/http";
-import { baseUrlApi } from "../utils";
 import { BaseResult } from "../types";
+import { baseUrlApi } from "../utils";
+
+export interface EduImportRowError {
+  rowNo: number;
+  field?: string;
+  reason: string;
+}
+
+export interface EduImportResultData {
+  total: number;
+  successCount: number;
+  failedCount: number;
+  errors?: EduImportRowError[];
+  message?: string;
+}
 
 export interface EduStudentContact {
   id?: number;
-  name?: string;
+  studentId?: number;
   relation?: string;
-  phone?: string;
-  email?: string;
-  isPrimary?: boolean;
+  name: string;
+  phone: string;
+  isPrimary?: number;
+  canPickup?: number;
   remark?: string;
 }
 
@@ -16,55 +31,47 @@ export interface EduStudentItem {
   id: number;
   createdAt?: string;
   updatedAt?: string;
-  deletedAt?: string | null;
-  studentName: string;
-  age?: number;
+  name: string;
   gender?: string;
-  className: string;
-  admissionDate: string;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  createdBy?: number;
-  tenantId?: number;
+  birthday?: string | null;
+  phone?: string;
+  status?: number;
+  avatar?: string;
+  school?: string;
+  grade?: string;
+  schoolClass?: string;
+  sourceChannel?: string;
+  enrollDate?: string | null;
+  healthNote?: string;
+  allergyNote?: string;
+  emergencyContact?: string;
+  pickupNote?: string;
+  remark?: string;
   contacts?: EduStudentContact[];
-  [key: string]: unknown;
 }
 
 export interface EduStudentListParams {
   pageNum?: number;
   pageSize?: number;
   order?: string;
-  studentName?: string;
-  className?: string;
+  name?: string;
   gender?: string;
   phone?: string;
-  email?: string;
-  admissionDateStart?: string;
-  admissionDateEnd?: string;
+  status?: number;
+  school?: string;
+  grade?: string;
+  schoolClass?: string;
+  sourceChannel?: string;
+  emergencyContact?: string;
 }
 
-export interface EduStudentAddParams {
-  studentName: string;
-  age?: number;
-  gender?: string;
-  className: string;
-  admissionDate: string;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  contacts?: EduStudentContact[];
-  [key: string]: unknown;
-}
+export type EduStudentAddParams = Omit<EduStudentItem, "id" | "createdAt" | "updatedAt">;
 
 export interface EduStudentUpdateParams extends EduStudentAddParams {
   id: number;
 }
 
-export type EduStudentImportRow = Omit<EduStudentAddParams, "contacts"> & {
-  contacts?: EduStudentContact[] | string;
-};
-
+export type EduStudentImportRow = Partial<EduStudentAddParams>;
 export type EduStudentExportRow = EduStudentItem;
 
 export type EduStudentListResult = BaseResult<{
@@ -73,41 +80,37 @@ export type EduStudentListResult = BaseResult<{
 }>;
 
 export type EduStudentDetailResult = BaseResult<EduStudentItem>;
-
-export type EduStudentImportResult = BaseResult<{
-  rows: EduStudentImportRow[];
-}>;
-
+export type EduStudentImportResult = BaseResult<EduImportResultData>;
 export type EduStudentExportResult = BaseResult<{
   list: EduStudentExportRow[];
 }>;
 
 export const getEduStudentListAPI = (params?: EduStudentListParams) => {
-  return http.request<EduStudentListResult>("get", baseUrlApi("eduStudent/list"), { params });
+  return http.request<EduStudentListResult>("get", baseUrlApi("edu/students/list"), { params });
 };
 
 export const getEduStudentDetailAPI = (id: number) => {
-  return http.request<EduStudentDetailResult>("get", baseUrlApi(`eduStudent/${id}`));
+  return http.request<EduStudentDetailResult>("get", baseUrlApi(`edu/students/${id}`));
 };
 
 export const addEduStudentAPI = (data: EduStudentAddParams) => {
-  return http.request<BaseResult>("post", baseUrlApi("eduStudent/add"), { data });
+  return http.request<BaseResult>("post", baseUrlApi("edu/students/add"), { data });
 };
 
 export const editEduStudentAPI = (data: EduStudentUpdateParams) => {
-  return http.request<BaseResult>("put", baseUrlApi("eduStudent/edit"), { data });
+  return http.request<BaseResult>("put", baseUrlApi("edu/students/edit"), { data });
 };
 
 export const deleteEduStudentAPI = (data: { id: number }) => {
-  return http.request<BaseResult>("delete", baseUrlApi("eduStudent/delete"), { data });
+  return http.request<BaseResult>("delete", baseUrlApi("edu/students/delete"), { data });
 };
 
 export const importEduStudentAPI = (rows: EduStudentImportRow[]) => {
-  return http.request<EduStudentImportResult>("post", baseUrlApi("eduStudent/import"), {
-    data: { rows }
+  return http.request<EduStudentImportResult>("post", baseUrlApi("edu/students/import"), {
+    data: { rows },
   });
 };
 
-export const exportEduStudentAPI = (params?: EduStudentListParams) => {
-  return http.request<EduStudentExportResult>("get", baseUrlApi("eduStudent/export"), { params });
+export const exportEduStudentAPI = (params?: { ids?: number[] }) => {
+  return http.request<EduStudentExportResult>("get", baseUrlApi("edu/students/export"), { params });
 };
