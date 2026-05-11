@@ -5,3 +5,4 @@ export * from "./edu/room";
 export * from "./edu/term";
 export * from "./edu/benefit";
 export * from "./edu/schedule";
+export * from "./edu/statistics";
