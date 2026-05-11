@@ -30,6 +30,23 @@ export const teachingModeOptions = [
   { label: "居家", value: "home" },
 ];
 
+export const scheduleRuleTypeOptions = [
+  { label: "班级排课", value: "class" },
+  { label: "一对一排课", value: "one_to_one" },
+];
+
+export const scheduleRepeatTypeOptions = [
+  { label: "单次", value: "single" },
+  { label: "每周", value: "weekly" },
+];
+
+export const lessonStatusOptions = [
+  { label: "待上课", value: "scheduled" },
+  { label: "已完成", value: "completed" },
+  { label: "已取消", value: "canceled" },
+  { label: "已停课", value: "stopped" },
+];
+
 export const requiresRoomOptions = [
   { label: "需要", value: 1 },
   { label: "不需要", value: 0 },

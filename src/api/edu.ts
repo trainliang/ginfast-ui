@@ -4,3 +4,4 @@ export * from "./edu/class";
 export * from "./edu/room";
 export * from "./edu/term";
 export * from "./edu/benefit";
+export * from "./edu/schedule";
