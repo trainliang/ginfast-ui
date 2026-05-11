@@ -110,7 +110,7 @@
           </a-select>
         </a-form-item>
         <a-form-item field="roomId" label="默认场地">
-          <a-select v-model="formModel.roomId" placeholder="请选择默认场地" allow-clear>
+          <a-select v-model="formModel.roomId" placeholder="可选，不指定则不绑定默认场地" allow-clear>
             <a-option v-for="item in roomOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
           </a-select>
         </a-form-item>
@@ -133,12 +133,15 @@
       <template #title>班级成员 - {{ currentClass?.name }}</template>
       <a-space direction="vertical" fill size="medium">
         <a-space wrap>
-          <a-select v-model="memberForm.studentId" placeholder="选择学生" allow-search allow-clear style="width: 220px">
+          <a-select v-model="memberForm.studentId" placeholder="选择学生" allow-search allow-clear style="width: 180px">
             <a-option v-for="item in studentOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
           </a-select>
-          <a-select v-model="memberForm.status" placeholder="状态" style="width: 130px">
+          <a-select v-model="memberForm.status" placeholder="状态" style="width: 110px">
             <a-option v-for="item in memberStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
           </a-select>
+          <a-date-picker v-model="memberForm.joinDate" placeholder="入班日期" value-format="YYYY-MM-DD" style="width: 130px" />
+          <a-date-picker v-model="memberForm.leaveDate" placeholder="离班日期" value-format="YYYY-MM-DD" style="width: 130px" />
+          <a-input v-model="memberForm.remark" placeholder="备注" allow-clear style="width: 140px" />
           <a-button type="primary" @click="handleSaveMember" v-hasPerm="['edu:class:member']">
             {{ memberForm.id ? "保存成员" : "添加成员" }}
           </a-button>
@@ -275,6 +278,8 @@ const currentClass = ref<EduClassItem | null>(null);
 const memberForm = ref<EduClassMemberAddParams & { id?: number }>({
   classId: 0,
   studentId: undefined as unknown as number,
+  joinDate: "",
+  leaveDate: "",
   status: "studying",
   remark: "",
 });
@@ -348,19 +353,23 @@ const resetForm = () => {
 };
 
 const handleSave = async () => {
-  const errors = await formRef.value?.validate?.();
-  if (errors) return false;
-  const payload = formModel.value;
-  if (payload.id) {
-    await editEduClassAPI({ ...payload, id: payload.id });
-    Message.success("班级更新成功");
-  } else {
-    await addEduClassAPI(payload);
-    Message.success("班级创建成功");
+  try {
+    const errors = await formRef.value?.validate?.();
+    if (errors) return false;
+    const payload = formModel.value;
+    if (payload.id) {
+      await editEduClassAPI({ ...payload, id: payload.id });
+      Message.success("班级更新成功");
+    } else {
+      await addEduClassAPI(payload);
+      Message.success("班级创建成功");
+    }
+    await fetchList();
+    resetForm();
+    return true;
+  } catch {
+    return false;
   }
-  await fetchList();
-  resetForm();
-  return true;
 };
 
 const handleDelete = async (id: number) => {
@@ -391,6 +400,8 @@ const resetMemberForm = () => {
   memberForm.value = {
     classId: currentClass.value?.id ?? 0,
     studentId: undefined as unknown as number,
+    joinDate: "",
+    leaveDate: "",
     status: "studying",
     remark: "",
   };

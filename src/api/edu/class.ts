@@ -92,6 +92,19 @@ export type EduClassMemberListResult = BaseResult<{
 export type EduClassTeacherOptionsResult = BaseResult<{
   list: EduTeacherOptionItem[];
 }>;
+export interface EduTeacherRoleConfigRoleItem {
+  id: number;
+  name: string;
+  status: number;
+  tenantID: number;
+}
+
+export interface EduTeacherRoleConfigData {
+  roles: EduTeacherRoleConfigRoleItem[];
+  selectedRoleIds: number[];
+}
+
+export type EduTeacherRoleConfigResult = BaseResult<EduTeacherRoleConfigData>;
 export type EduClassImportResult = BaseResult<EduImportResultData>;
 export type EduClassMemberImportResult = BaseResult<EduImportResultData>;
 export type EduClassExportResult = BaseResult<{
@@ -161,4 +174,14 @@ export const exportEduClassMembersAPI = (params?: { ids?: number[] }) => {
 
 export const getEduClassTeacherOptionsAPI = () => {
   return http.request<EduClassTeacherOptionsResult>("get", baseUrlApi("edu/classes/teacher-options"));
+};
+
+export const getEduTeacherRoleConfigAPI = () => {
+  return http.request<EduTeacherRoleConfigResult>("get", baseUrlApi("edu/classes/teacher-role-config"));
+};
+
+export const saveEduTeacherRoleConfigAPI = (roleIds: number[]) => {
+  return http.request<BaseResult>("put", baseUrlApi("edu/classes/teacher-role-config"), {
+    data: { roleIds },
+  });
 };

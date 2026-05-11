@@ -230,19 +230,23 @@ const resetForm = () => {
 };
 
 const handleSave = async () => {
-  const errors = await formRef.value?.validate?.();
-  if (errors) return false;
-  const payload = formModel.value;
-  if (payload.id) {
-    await editEduCourseAPI({ ...payload, id: payload.id });
-    Message.success("课程/项目更新成功");
-  } else {
-    await addEduCourseAPI(payload);
-    Message.success("课程/项目创建成功");
+  try {
+    const errors = await formRef.value?.validate?.();
+    if (errors) return false;
+    const payload = formModel.value;
+    if (payload.id) {
+      await editEduCourseAPI({ ...payload, id: payload.id });
+      Message.success("课程/项目更新成功");
+    } else {
+      await addEduCourseAPI(payload);
+      Message.success("课程/项目更新成功");
+    }
+    await fetchList();
+    resetForm();
+    return true;
+  } catch {
+    return false;
   }
-  await fetchList();
-  resetForm();
-  return true;
 };
 
 const handleDelete = async (id: number) => {

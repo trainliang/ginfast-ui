@@ -383,20 +383,24 @@ const resetForm = () => {
 };
 
 const handleSave = async () => {
-  const errors = await formRef.value?.validate?.();
-  if (errors) return false;
+  try {
+    const errors = await formRef.value?.validate?.();
+    if (errors) return false;
 
-  const payload = formModel.value;
-  if (payload.id) {
-    await editEduRoomAPI({ ...payload, id: payload.id });
-    Message.success("场地更新成功");
-  } else {
-    await addEduRoomAPI(payload);
-    Message.success("场地创建成功");
+    const payload = formModel.value;
+    if (payload.id) {
+      await editEduRoomAPI({ ...payload, id: payload.id });
+      Message.success("场地更新成功");
+    } else {
+      await addEduRoomAPI(payload);
+      Message.success("场地创建成功");
+    }
+    await fetchList();
+    resetForm();
+    return true;
+  } catch {
+    return false;
   }
-  await fetchList();
-  resetForm();
-  return true;
 };
 
 const handleDelete = async (id: number) => {
@@ -488,6 +492,8 @@ const saveWeeklyRules = async () => {
     await saveEduRoomWeeklyRulesAPI(currentRoom.value.id, rows);
     Message.success("周规则保存成功");
     await loadRoomTimeData(currentRoom.value.id);
+  } catch {
+    Message.error("周规则保存失败");
   } finally {
     weeklySaving.value = false;
   }
@@ -515,27 +521,32 @@ const openExceptionModal = (record?: EduRoomException) => {
 
 const saveException = async () => {
   if (!currentRoom.value) return false;
-  const errors = await exceptionFormRef.value?.validate?.();
-  if (errors) return false;
+  try {
+    const errors = await exceptionFormRef.value?.validate?.();
+    if (errors) return false;
 
-  const payload = {
-    ...exceptionForm.value,
-    startTime: normalizeTime(exceptionForm.value.startTime),
-    endTime: normalizeTime(exceptionForm.value.endTime),
-  } as EduRoomException;
+    const payload = {
+      ...exceptionForm.value,
+      roomId: currentRoom.value.id,
+      startTime: normalizeTime(exceptionForm.value.startTime),
+      endTime: normalizeTime(exceptionForm.value.endTime),
+    } as EduRoomException;
 
-  if (payload.id) {
-    await editEduRoomExceptionAPI(currentRoom.value.id, payload);
-    Message.success("例外日期更新成功");
-  } else {
-    await addEduRoomExceptionAPI(currentRoom.value.id, payload);
-    Message.success("例外日期新增成功");
+    if (payload.id) {
+      await editEduRoomExceptionAPI(currentRoom.value.id, payload);
+      Message.success("例外日期更新成功");
+    } else {
+      await addEduRoomExceptionAPI(currentRoom.value.id, payload);
+      Message.success("例外日期新增成功");
+    }
+
+    exceptionModalVisible.value = false;
+    resetExceptionForm();
+    await loadRoomTimeData(currentRoom.value.id);
+    return true;
+  } catch {
+    return false;
   }
-
-  exceptionModalVisible.value = false;
-  resetExceptionForm();
-  await loadRoomTimeData(currentRoom.value.id);
-  return true;
 };
 
 const deleteException = async (id?: number) => {
