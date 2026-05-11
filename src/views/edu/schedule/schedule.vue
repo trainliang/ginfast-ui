@@ -152,6 +152,67 @@
             </template>
           </a-table>
         </a-tab-pane>
+
+        <a-tab-pane key="calendar" title="课表日历">
+          <s-layout-tools>
+            <template #left>
+              <a-space wrap>
+                <a-radio-group v-model="calendarView" type="button">
+                  <a-radio v-for="item in calendarViewOptions" :key="item.value" :value="item.value">{{ item.label }}</a-radio>
+                </a-radio-group>
+                <a-select v-model="calendarSearchForm.teacherId" placeholder="教师" allow-clear style="width: 160px">
+                  <a-option v-for="item in teacherOptions" :key="item.id" :value="item.id">{{ teacherLabel(item) }}</a-option>
+                </a-select>
+                <a-select v-model="calendarSearchForm.roomId" placeholder="场地" allow-clear style="width: 160px">
+                  <a-option v-for="item in roomOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+                </a-select>
+                <a-select v-model="calendarSearchForm.classId" placeholder="班级" allow-clear style="width: 160px">
+                  <a-option v-for="item in classOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+                </a-select>
+                <a-select v-model="calendarSearchForm.studentId" placeholder="学生" allow-clear allow-search style="width: 160px">
+                  <a-option v-for="item in studentOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+                </a-select>
+                <a-button type="primary" @click="handleCalendarSearch"><template #icon><icon-search /></template>查询</a-button>
+                <a-button @click="handleCalendarReset"><template #icon><icon-refresh /></template>重置</a-button>
+              </a-space>
+            </template>
+            <template #right>
+              <a-tag color="arcoblue">日程预览</a-tag>
+              <a-tag color="purple">课次详情</a-tag>
+            </template>
+          </s-layout-tools>
+
+          <div class="calendar-shell">
+            <div class="calendar-grid">
+              <button
+                v-for="record in pagedCalendarList"
+                :key="record.id"
+                class="calendar-card"
+                type="button"
+                @click="openLessonDrawer(record)"
+              >
+                <div class="calendar-card__day">{{ calendarCardDay(record.lessonDate) }}</div>
+                <div class="calendar-card__date">{{ record.lessonDate || "-" }}</div>
+                <div class="calendar-card__time">{{ timeRangeText(record.startTime, record.endTime) }}</div>
+                <div class="calendar-card__meta">{{ courseName(record.courseId) }}</div>
+                <div class="calendar-card__meta">{{ teacherName(record.teacherId) }}</div>
+                <a-tag size="small" color="arcoblue">{{ labelOf(lessonStatusOptions, record.status) }}</a-tag>
+              </button>
+            </div>
+            <a-empty v-if="!calendarLoading && calendarList.length === 0" description="当前筛选条件下暂无课次" />
+            <div class="calendar-footer">
+              <a-pagination
+                :current="calendarPagination.current"
+                :page-size="calendarPagination.pageSize"
+                :total="calendarPagination.total"
+                show-total
+                show-page-size
+                @change="handleCalendarPageChange"
+                @page-size-change="handleCalendarPageSizeChange"
+              />
+            </div>
+          </div>
+        </a-tab-pane>
       </a-tabs>
     </div>
 
@@ -233,24 +294,77 @@
         <a-form-item field="remark" label="备注"><a-textarea v-model="ruleForm.remark" placeholder="请输入备注" /></a-form-item>
       </a-form>
     </a-modal>
+
+    <a-drawer v-model:visible="lessonDrawerVisible" title="课次详情" :width="isMobile ? '100%' : 560" :footer="false">
+      <a-descriptions :column="1" bordered size="small">
+        <a-descriptions-item label="课次日期">{{ selectedLesson.lessonDate || "-" }}</a-descriptions-item>
+        <a-descriptions-item label="时间">{{ timeRangeText(selectedLesson.startTime, selectedLesson.endTime) }}</a-descriptions-item>
+        <a-descriptions-item label="课程">{{ courseName(selectedLesson.courseId) }}</a-descriptions-item>
+        <a-descriptions-item label="教师">{{ teacherName(selectedLesson.teacherId) }}</a-descriptions-item>
+        <a-descriptions-item label="班级">{{ className(selectedLesson.classId) }}</a-descriptions-item>
+        <a-descriptions-item label="学生">{{ studentName(selectedLesson.studentId) }}</a-descriptions-item>
+        <a-descriptions-item label="场地">{{ roomName(selectedLesson.roomId) }}</a-descriptions-item>
+        <a-descriptions-item label="状态">{{ labelOf(lessonStatusOptions, selectedLesson.status) }}</a-descriptions-item>
+      </a-descriptions>
+
+      <a-space wrap style="margin-top: 16px">
+        <a-button type="primary" @click="handleLessonAction('reschedule')">调课</a-button>
+        <a-button @click="handleLessonAction('stop')">停课</a-button>
+        <a-button @click="handleLessonAction('cancel')">取消</a-button>
+        <a-button @click="handleLessonAction('restore')">恢复</a-button>
+        <a-button @click="handleLessonAction('makeup')">补课</a-button>
+        <a-button @click="handleLessonAction('history')">变更历史</a-button>
+      </a-space>
+
+      <a-alert
+        style="margin-top: 16px"
+        type="info"
+        :show-icon="false"
+        message="当前版本先提供课次详情、动作入口、基础提交和变更历史预览。完整调课/补课表单将在后续任务继续收紧。"
+      />
+
+      <div class="lesson-history" v-if="lessonHistoryRows.length > 0">
+        <div class="lesson-history__title">变更历史</div>
+        <a-timeline>
+          <a-timeline-item v-for="item in lessonHistoryRows" :key="item.id">
+            <div class="lesson-history__item">
+              <strong>{{ item.actionType || "-" }}</strong>
+              <span>{{ item.occurredAt || item.createdAt || "-" }}</span>
+            </div>
+            <div class="lesson-history__reason">{{ item.reason || "无原因" }}</div>
+          </a-timeline-item>
+        </a-timeline>
+      </div>
+    </a-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Modal, Message } from "@arco-design/web-vue";
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import type { TableData } from "@arco-design/web-vue/es/table/interface";
 import { useDevicesSize } from "@/hooks/useDevicesSize";
 import {
   addEduScheduleRuleAPI,
   checkEduScheduleConflictsAPI,
   deleteEduScheduleRuleAPI,
+  getEduLessonCalendarAPI,
   editEduScheduleRuleAPI,
   getEduLessonListAPI,
   getEduScheduleRuleListAPI,
   previewEduScheduleRuleChangeAPI,
+  rescheduleEduLessonAPI,
+  stopEduLessonAPI,
+  cancelEduLessonAPI,
+  restoreEduLessonAPI,
+  makeupEduLessonAPI,
+  getEduLessonChangeLogsAPI,
   type EduCourseOptionItem,
+  type EduLessonChangeLogItem,
   type EduLessonItem,
+  type EduLessonMakeupParams,
+  type EduLessonRescheduleParams,
+  type EduLessonStatusActionParams,
   type EduRoomOptionItem,
   type EduScheduleRuleAddParams,
   type EduScheduleRuleItem,
@@ -284,6 +398,17 @@ const lessonLoading = ref(false);
 const lessonList = ref<EduLessonItem[]>([]);
 const lessonSearchForm = reactive<{ status?: string; classId?: number; studentId?: number; teacherId?: number }>({});
 const lessonPagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true });
+
+const calendarView = ref("week");
+const calendarViewOptions = [
+  { label: "日视图", value: "day" },
+  { label: "周视图", value: "week" },
+  { label: "月视图", value: "month" },
+];
+const calendarLoading = ref(false);
+const calendarList = ref<EduLessonItem[]>([]);
+const calendarSearchForm = reactive<{ teacherId?: number; roomId?: number; classId?: number; studentId?: number }>({});
+const calendarPagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true });
 
 const ruleModalVisible = ref(false);
 const ruleFormRef = ref();
@@ -322,6 +447,15 @@ const courseOptions = ref<EduCourseOptionItem[]>([]);
 const teacherOptions = ref<EduTeacherOptionItem[]>([]);
 const roomOptions = ref<EduRoomOptionItem[]>([]);
 const studentOptions = ref<EduStudentItem[]>([]);
+
+const lessonDrawerVisible = ref(false);
+const selectedLesson = ref<EduLessonItem>({ id: 0, lessonDate: "", startTime: "", endTime: "" });
+const lessonHistoryRows = ref<EduLessonChangeLogItem[]>([]);
+const pagedCalendarList = computed(() => {
+  const start = (calendarPagination.current - 1) * calendarPagination.pageSize;
+  const end = start + calendarPagination.pageSize;
+  return calendarList.value.slice(start, end);
+});
 
 const showClassField = computed(() => ruleForm.value.ruleType === "class");
 const showStudentField = computed(() => ruleForm.value.ruleType === "one_to_one");
@@ -365,6 +499,17 @@ const fetchLessonList = async () => {
   }
 };
 
+const fetchCalendarList = async () => {
+  calendarLoading.value = true;
+  try {
+    const res = await getEduLessonCalendarAPI(buildCalendarParams());
+    calendarList.value = res.data.list || [];
+    calendarPagination.total = calendarList.value.length;
+  } finally {
+    calendarLoading.value = false;
+  }
+};
+
 const handleRuleSearch = () => { rulePagination.current = 1; fetchRuleList(); };
 const handleRuleReset = () => { Object.assign(ruleSearchForm, { name: undefined, ruleType: undefined, repeatType: undefined, status: undefined }); handleRuleSearch(); };
 const handleRulePageChange = (page: number) => { rulePagination.current = page; fetchRuleList(); };
@@ -373,6 +518,10 @@ const handleLessonSearch = () => { lessonPagination.current = 1; fetchLessonList
 const handleLessonReset = () => { Object.assign(lessonSearchForm, { status: undefined, classId: undefined, studentId: undefined, teacherId: undefined }); handleLessonSearch(); };
 const handleLessonPageChange = (page: number) => { lessonPagination.current = page; fetchLessonList(); };
 const handleLessonPageSizeChange = (pageSize: number) => { lessonPagination.pageSize = pageSize; lessonPagination.current = 1; fetchLessonList(); };
+const handleCalendarSearch = () => { calendarPagination.current = 1; fetchCalendarList(); };
+const handleCalendarReset = () => { Object.assign(calendarSearchForm, { teacherId: undefined, roomId: undefined, classId: undefined, studentId: undefined }); handleCalendarSearch(); };
+const handleCalendarPageChange = (page: number) => { calendarPagination.current = page; };
+const handleCalendarPageSizeChange = (pageSize: number) => { calendarPagination.pageSize = pageSize; calendarPagination.current = 1; };
 
 const handleCreateRule = () => { ruleForm.value = emptyRuleForm(); ruleModalVisible.value = true; };
 const handleEditRule = (record: TableData) => { ruleForm.value = { ...emptyRuleForm(), ...(record as EduScheduleRuleItem) }; ruleModalVisible.value = true; };
@@ -473,15 +622,184 @@ const teacherName = (id?: number) => {
 const weekdayText = (weekday?: number) => weekdayOptions.find((item) => item.value === weekday)?.label ?? "-";
 const dateRangeText = (start?: string | null, end?: string | null) => [start || "-", end || "-"].join(" ~ ");
 const timeRangeText = (start?: string, end?: string) => [start || "-", end || "-"].join(" ~ ");
+const calendarCardDay = (value?: string) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
+};
 const targetText = (record: EduScheduleRuleItem) => {
   if (record.ruleType === "class") return className(record.classId);
   if (record.ruleType === "one_to_one") return studentName(record.studentId);
   return "-";
 };
 
+const buildCalendarParams = () => {
+  const start = new Date();
+  const end = new Date(start);
+  if (calendarView.value === "day") {
+    end.setDate(start.getDate());
+  } else if (calendarView.value === "week") {
+    end.setDate(start.getDate() + 6);
+  } else {
+    end.setDate(start.getDate() + 29);
+  }
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+    teacherId: calendarSearchForm.teacherId,
+    classId: calendarSearchForm.classId,
+    studentId: calendarSearchForm.studentId,
+    roomId: calendarSearchForm.roomId,
+  };
+};
+
+watch(calendarView, () => {
+  handleCalendarSearch();
+});
+
+const openLessonDrawer = (record: EduLessonItem) => {
+  selectedLesson.value = { ...record };
+  lessonHistoryRows.value = [];
+  lessonDrawerVisible.value = true;
+};
+
+const handleLessonAction = async (action: "reschedule" | "stop" | "cancel" | "restore" | "makeup" | "history") => {
+  const lessonId = Number(selectedLesson.value.id);
+  if (!lessonId) return;
+  if (action === "history") {
+    const res = await getEduLessonChangeLogsAPI(lessonId);
+    lessonHistoryRows.value = res.data.list || [];
+    Message.success("变更历史已加载");
+    return;
+  }
+  if (action === "reschedule") {
+    const payload: EduLessonRescheduleParams = {
+      lessonId,
+      lessonDate: selectedLesson.value.lessonDate,
+      startTime: selectedLesson.value.startTime,
+      endTime: selectedLesson.value.endTime,
+      teacherId: Number(selectedLesson.value.teacherId || 0),
+      teachingMode: selectedLesson.value.teachingMode || "online",
+      roomId: selectedLesson.value.roomId,
+    };
+    await rescheduleEduLessonAPI(payload);
+  } else if (action === "stop") {
+    const payload: EduLessonStatusActionParams = { lessonId, reason: "课表日历操作停课" };
+    await stopEduLessonAPI(payload);
+  } else if (action === "cancel") {
+    const payload: EduLessonStatusActionParams = { lessonId, reason: "课表日历操作取消" };
+    await cancelEduLessonAPI(payload);
+  } else if (action === "restore") {
+    const payload: EduLessonStatusActionParams = { lessonId, reason: "课表日历操作恢复" };
+    await restoreEduLessonAPI(payload);
+  } else if (action === "makeup") {
+    const payload: EduLessonMakeupParams = {
+      lessonId,
+      lessonDate: selectedLesson.value.lessonDate,
+      startTime: selectedLesson.value.startTime,
+      endTime: selectedLesson.value.endTime,
+      teacherId: Number(selectedLesson.value.teacherId || 0),
+      teachingMode: selectedLesson.value.teachingMode || "online",
+      roomId: selectedLesson.value.roomId,
+      reason: "课表日历发起补课",
+    };
+    await makeupEduLessonAPI(payload);
+  }
+  Message.success("操作已提交");
+  await fetchCalendarList();
+  await fetchLessonList();
+};
+
 onMounted(async () => {
   await fetchOptions();
   await fetchRuleList();
   await fetchLessonList();
+  await fetchCalendarList();
 });
 </script>
+
+<style scoped>
+.calendar-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.calendar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 152px;
+  padding: 14px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 8px;
+  background: var(--color-bg-2);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.calendar-card:hover {
+  border-color: rgb(var(--primary-6));
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.calendar-card__day {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.calendar-card__date {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+
+.calendar-card__time {
+  font-size: 13px;
+  color: rgb(var(--primary-6));
+}
+
+.calendar-card__meta {
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lesson-history {
+  margin-top: 20px;
+}
+
+.lesson-history__title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+
+.lesson-history__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--color-text-1);
+}
+
+.lesson-history__reason {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+</style>

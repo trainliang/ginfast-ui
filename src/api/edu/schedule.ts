@@ -86,6 +86,8 @@ export interface EduLessonCalendarParams {
   endDate?: string;
   classId?: number;
   teacherId?: number;
+  studentId?: number;
+  roomId?: number;
 }
 
 export interface EduScheduleConflictCheckParams {
@@ -116,6 +118,50 @@ export interface EduScheduleConflictItem {
 }
 export type EduScheduleConflictCheckResult = BaseResult<{ items?: EduScheduleConflictItem[]; hasConflict?: boolean }>;
 export type EduSchedulePreviewChangeResult = BaseResult<{ list?: EduLessonItem[] }>;
+export interface EduLessonChangeLogItem {
+  id: number;
+  createdAt?: string;
+  updatedAt?: string;
+  lessonId?: number;
+  ruleId?: number;
+  actionType?: string;
+  beforeData?: string;
+  afterData?: string;
+  reason?: string;
+  operatorId?: number;
+  occurredAt?: string;
+}
+export type EduLessonChangeLogsResult = BaseResult<{ list?: EduLessonChangeLogItem[] }>;
+
+export interface EduLessonRescheduleParams {
+  lessonId: number;
+  lessonDate: string;
+  startTime: string;
+  endTime: string;
+  teacherId: number;
+  teachingMode: string;
+  roomId?: number;
+  allowConflictOverride?: boolean;
+  overrideReason?: string;
+}
+
+export interface EduLessonStatusActionParams {
+  lessonId: number;
+  reason: string;
+}
+
+export interface EduLessonMakeupParams {
+  lessonId: number;
+  lessonDate: string;
+  startTime: string;
+  endTime: string;
+  teacherId: number;
+  teachingMode: string;
+  roomId?: number;
+  reason: string;
+  allowConflictOverride?: boolean;
+  overrideReason?: string;
+}
 
 export const getEduScheduleRuleListAPI = (params?: EduScheduleRuleListParams) => {
   return http.request<EduScheduleRuleListResult>("get", baseUrlApi("edu/schedule-rules/list"), { params });
@@ -149,4 +195,28 @@ export const getEduLessonCalendarAPI = (params?: EduLessonCalendarParams) => {
 
 export const checkEduScheduleConflictsAPI = (data: EduScheduleConflictCheckParams) => {
   return http.request<EduScheduleConflictCheckResult>("post", baseUrlApi("edu/schedules/check-conflicts"), { data });
+};
+
+export const rescheduleEduLessonAPI = (data: EduLessonRescheduleParams) => {
+  return http.request<BaseResult>("put", baseUrlApi("edu/lessons/reschedule"), { data });
+};
+
+export const stopEduLessonAPI = (data: EduLessonStatusActionParams) => {
+  return http.request<BaseResult>("put", baseUrlApi("edu/lessons/stop"), { data });
+};
+
+export const cancelEduLessonAPI = (data: EduLessonStatusActionParams) => {
+  return http.request<BaseResult>("put", baseUrlApi("edu/lessons/cancel"), { data });
+};
+
+export const restoreEduLessonAPI = (data: EduLessonStatusActionParams) => {
+  return http.request<BaseResult>("put", baseUrlApi("edu/lessons/restore"), { data });
+};
+
+export const makeupEduLessonAPI = (data: EduLessonMakeupParams) => {
+  return http.request<BaseResult>("post", baseUrlApi("edu/lessons/makeup"), { data });
+};
+
+export const getEduLessonChangeLogsAPI = (lessonId: number) => {
+  return http.request<EduLessonChangeLogsResult>("get", baseUrlApi(`edu/lessons/${lessonId}/change-logs`));
 };
