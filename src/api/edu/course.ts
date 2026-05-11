@@ -11,6 +11,8 @@ export interface EduCourseItem {
   code: string;
   type?: string;
   gradeRange?: string;
+  defaultTeachingMode?: string;
+  requiresRoom?: number;
   status?: number;
   sort?: number;
   description?: string;
@@ -25,6 +27,8 @@ export interface EduCourseListParams {
   type?: string;
   status?: number;
   gradeRange?: string;
+  defaultTeachingMode?: string;
+  requiresRoom?: number;
   description?: string;
 }
 

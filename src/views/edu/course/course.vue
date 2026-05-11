@@ -9,6 +9,12 @@
             <a-select v-model="searchForm.type" placeholder="类型" allow-clear style="width: 140px">
               <a-option v-for="item in courseTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
             </a-select>
+            <a-select v-model="searchForm.defaultTeachingMode" placeholder="默认授课方式" allow-clear style="width: 140px">
+              <a-option v-for="item in teachingModeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+            </a-select>
+            <a-select v-model="searchForm.requiresRoom" placeholder="是否需要场地" allow-clear style="width: 130px">
+              <a-option v-for="item in requiresRoomOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+            </a-select>
             <a-select v-model="searchForm.status" placeholder="状态" allow-clear style="width: 120px">
               <a-option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
             </a-select>
@@ -51,6 +57,12 @@
             <template #cell="{ record }">{{ labelOf(courseTypeOptions, record.type) }}</template>
           </a-table-column>
           <a-table-column title="适用年龄/年级" data-index="gradeRange" :width="160" />
+          <a-table-column title="默认授课方式" :width="120" align="center">
+            <template #cell="{ record }">{{ labelOf(teachingModeOptions, record.defaultTeachingMode) }}</template>
+          </a-table-column>
+          <a-table-column title="需要场地" :width="100" align="center">
+            <template #cell="{ record }">{{ labelOf(requiresRoomOptions, record.requiresRoom) }}</template>
+          </a-table-column>
           <a-table-column title="状态" :width="90" align="center">
             <template #cell="{ record }">
               <a-tag :color="record.status === 1 ? 'green' : 'red'">{{ labelOf(statusOptions, record.status) }}</a-tag>
@@ -94,6 +106,16 @@
         </a-form-item>
         <a-form-item field="gradeRange" label="适用年龄/年级">
           <a-input v-model="formModel.gradeRange" placeholder="例如：一年级-三年级" allow-clear />
+        </a-form-item>
+        <a-form-item field="defaultTeachingMode" label="默认授课方式">
+          <a-select v-model="formModel.defaultTeachingMode" placeholder="请选择授课方式">
+            <a-option v-for="item in teachingModeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item field="requiresRoom" label="是否需要场地">
+          <a-radio-group v-model="formModel.requiresRoom">
+            <a-radio v-for="item in requiresRoomOptions" :key="item.value" :value="item.value">{{ item.label }}</a-radio>
+          </a-radio-group>
         </a-form-item>
         <a-form-item field="status" label="状态">
           <a-radio-group v-model="formModel.status">
@@ -140,7 +162,7 @@ import {
 } from "@/api/edu";
 import ImportDialog from "../components/import-dialog.vue";
 import { exportRowsToXlsx, type ExportColumn } from "../components/export-tools";
-import { courseTypeOptions, labelOf, statusOptions } from "../components/options";
+import { courseTypeOptions, labelOf, requiresRoomOptions, statusOptions, teachingModeOptions } from "../components/options";
 
 const { isMobile } = useDevicesSize();
 const layoutMode = computed(() => ({ width: isMobile.value ? "95%" : "640px", layout: isMobile.value ? "vertical" : "horizontal" }));
@@ -155,6 +177,8 @@ const emptyForm = (): EduCourseAddParams & { id?: number } => ({
   code: "",
   type: "",
   gradeRange: "",
+  defaultTeachingMode: "offline",
+  requiresRoom: 1,
   status: 1,
   sort: 0,
   description: "",
@@ -173,6 +197,8 @@ const exportColumns: ExportColumn<Record<string, unknown>>[] = [
   { title: "编码", key: "code" },
   { title: "类型", key: "type" },
   { title: "适用年龄/年级", key: "gradeRange" },
+  { title: "默认授课方式", key: "defaultTeachingMode" },
+  { title: "是否需要场地", key: "requiresRoom" },
   { title: "状态", key: "status" },
   { title: "排序", key: "sort" },
   { title: "描述", key: "description" },
@@ -199,7 +225,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-  Object.assign(searchForm, { name: undefined, code: undefined, type: undefined, status: undefined });
+  Object.assign(searchForm, { name: undefined, code: undefined, type: undefined, defaultTeachingMode: undefined, requiresRoom: undefined, status: undefined });
   handleSearch();
 };
 

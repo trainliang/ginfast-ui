@@ -24,9 +24,26 @@ export const courseTypeOptions = [
   { label: "其他", value: "other" },
 ];
 
+export const teachingModeOptions = [
+  { label: "线下", value: "offline" },
+  { label: "线上", value: "online" },
+  { label: "居家", value: "home" },
+];
+
+export const requiresRoomOptions = [
+  { label: "需要", value: 1 },
+  { label: "不需要", value: 0 },
+];
+
 export const classTypeOptions = [
   { label: "托管班", value: "daycare" },
   { label: "班课", value: "group" },
+];
+
+export const benefitCheckPolicyOptions = [
+  { label: "必检", value: "required" },
+  { label: "提醒", value: "warn" },
+  { label: "不检", value: "none" },
 ];
 
 export const memberStatusOptions = [
@@ -46,6 +63,30 @@ export const roomTypeOptions = [
 export const roomExceptionTypeOptions = [
   { label: "特殊开放", value: "open" },
   { label: "停用", value: "closed" },
+];
+
+export const benefitTypeOptions = [
+  { label: "课程权益", value: "course" },
+  { label: "福利权益", value: "welfare" },
+  { label: "外部权益", value: "external" },
+];
+
+export const calculationModeOptions = [
+  { label: "计次", value: "count_limited" },
+  { label: "时长", value: "period_unlimited" },
+  { label: "无额度", value: "none" },
+];
+
+export const benefitStatusOptions = [
+  { label: "启用", value: 1 },
+  { label: "停用", value: 0 },
+];
+
+export const externalSyncStatusOptions = [
+  { label: "待同步", value: "pending" },
+  { label: "成功", value: "success" },
+  { label: "失败", value: "failed" },
+  { label: "重试中", value: "retrying" },
 ];
 
 export const weekdayOptions = [

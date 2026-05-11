@@ -9,6 +9,9 @@
             <a-select v-model="searchForm.classType" placeholder="班级类型" allow-clear style="width: 140px">
               <a-option v-for="item in classTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
             </a-select>
+            <a-select v-model="searchForm.benefitCheckPolicy" placeholder="权益校验策略" allow-clear style="width: 140px">
+              <a-option v-for="item in benefitCheckPolicyOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+            </a-select>
             <a-button type="primary" @click="handleSearch">
               <template #icon><icon-search /></template>
               查询
@@ -55,6 +58,9 @@
           </a-table-column>
           <a-table-column title="默认场地" :width="140" ellipsis tooltip>
             <template #cell="{ record }">{{ roomName(record.roomId) }}</template>
+          </a-table-column>
+          <a-table-column title="权益校验策略" :width="120" align="center">
+            <template #cell="{ record }">{{ labelOf(benefitCheckPolicyOptions, record.benefitCheckPolicy) }}</template>
           </a-table-column>
           <a-table-column title="容量" data-index="capacity" :width="90" align="center" />
           <a-table-column title="状态" :width="90" align="center">
@@ -112,6 +118,11 @@
         <a-form-item field="roomId" label="默认场地">
           <a-select v-model="formModel.roomId" placeholder="可选，不指定则不绑定默认场地" allow-clear>
             <a-option v-for="item in roomOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item field="benefitCheckPolicy" label="权益校验策略">
+          <a-select v-model="formModel.benefitCheckPolicy" placeholder="请选择权益校验策略">
+            <a-option v-for="item in benefitCheckPolicyOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
           </a-select>
         </a-form-item>
         <a-form-item field="capacity" label="容量">
@@ -216,7 +227,7 @@ import {
 } from "@/api/edu";
 import ImportDialog from "../components/import-dialog.vue";
 import { exportRowsToXlsx, type ExportColumn } from "../components/export-tools";
-import { classTypeOptions, labelOf, memberStatusOptions, statusOptions } from "../components/options";
+import { benefitCheckPolicyOptions, classTypeOptions, labelOf, memberStatusOptions, statusOptions } from "../components/options";
 
 const { isMobile } = useDevicesSize();
 const layoutMode = computed(() => ({ width: isMobile.value ? "95%" : "720px", layout: isMobile.value ? "vertical" : "horizontal" }));
@@ -239,6 +250,7 @@ const emptyForm = (): EduClassAddParams & { id?: number } => ({
   teacherId: undefined as unknown as number,
   roomId: undefined,
   capacity: 20,
+  benefitCheckPolicy: "required",
   status: 1,
   remark: "",
 });
@@ -262,6 +274,7 @@ const exportColumns: ExportColumn<Record<string, unknown>>[] = [
   { title: "课程ID", key: "courseId" },
   { title: "教师ID", key: "teacherId" },
   { title: "场地ID", key: "roomId" },
+  { title: "权益校验策略", key: "benefitCheckPolicy" },
   { title: "容量", key: "capacity" },
   { title: "状态", key: "status" },
   { title: "备注", key: "remark" },
@@ -322,7 +335,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-  Object.assign(searchForm, { name: undefined, code: undefined, classType: undefined });
+  Object.assign(searchForm, { name: undefined, code: undefined, classType: undefined, benefitCheckPolicy: undefined });
   handleSearch();
 };
 

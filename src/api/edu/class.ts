@@ -14,6 +14,7 @@ export interface EduClassItem {
   teacherId: number;
   roomId?: number;
   capacity: number;
+  benefitCheckPolicy?: string;
   status?: number;
   startDate?: string | null;
   endDate?: string | null;
@@ -42,6 +43,7 @@ export interface EduClassListParams {
   courseId?: number;
   teacherId?: number;
   roomId?: number;
+  benefitCheckPolicy?: string;
   status?: number;
 }
 
