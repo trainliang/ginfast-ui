@@ -23,12 +23,12 @@
                         </template>
                     </a-input-password>
                 </a-form-item>
-                <a-form-item field="verifyCode" :hide-asterisk="true">
+                <a-form-item field="verifyCode" :hide-asterisk="true" v-if="captchaConfig.open">
                     <div class="verifyCode">
                         <a-input style="width: 160px" v-model="form.captchaValue" allow-clear placeholder="请输入验证码" />
                         <!-- <s-verify-code :content-height="30" :font-size-max="30" :content-width="110"
                             @verify-code-change="verifyCodeChange" /> -->
-                        <img :src="captchaImgUrl" class="verifyCodeImg" 
+                        <img :src="captchaImgUrl" class="verifyCodeImg"
                             @click="refreshCaptcha" />
                     </div>
                 </a-form-item>
@@ -59,7 +59,7 @@ import { useSysConfigStore } from "@/store/modules/sys-config";
 import { storeToRefs } from "pinia";
 // 获取系统配置
 const sysConfigStore = useSysConfigStore();
-const { systemConfig } = storeToRefs(sysConfigStore);
+const { captchaConfig, systemConfig } = storeToRefs(sysConfigStore);
 // 定义表单数据类型
 interface LoginForm {
     tenantCode: string;
@@ -171,7 +171,9 @@ watch(systemConfig, (newConfig) => {
 
 // 组件挂载时的初始化
 onMounted(async () => {
-    refreshCaptcha();
+    if (captchaConfig.value.open) {
+        refreshCaptcha();
+    }
 });
 </script>
 
