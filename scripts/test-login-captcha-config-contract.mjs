@@ -4,10 +4,23 @@ import { resolve } from "node:path";
 
 const root = resolve(process.cwd());
 const read = (path) => readFileSync(resolve(root, path), "utf8");
+const readServer = (path) => {
+  const serverRoot = process.env.GINFAST_SERVER_DIR || "../ginfast-server";
+  return readFileSync(resolve(root, serverRoot, path), "utf8");
+};
 
 const loginForm = read("src/views/login/components/login-form.vue");
 const userApi = read("src/api/user.ts");
+const authController = readServer("app/controllers/auth.go");
+
 assert.ok(userApi.includes("enabled: boolean"), "captcha API type must expose whether captcha is enabled");
+
+assert.ok(
+  /"enabled":\s*false/.test(authController),
+  "captcha endpoint must explicitly return enabled=false when captcha is closed"
+);
+
+assert.ok(/"enabled":\s*true/.test(authController), "captcha endpoint must explicitly return enabled=true when captcha is open");
 
 assert.ok(!loginForm.includes("captchaConfig"), "login form must not read system captcha config directly");
 
