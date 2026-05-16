@@ -3,11 +3,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(process.cwd());
-const read = path => readFileSync(resolve(root, path), "utf8");
+const read = (path) => readFileSync(resolve(root, path), "utf8");
+const readServer = (path) => {
+  const serverRoot = process.env.GINFAST_SERVER_DIR || "../ginfast-server";
+  return readFileSync(resolve(root, serverRoot, path), "utf8");
+};
 
 const loginForm = read("src/views/login/components/login-form.vue");
 const userApi = read("src/api/user.ts");
-const authController = read("../ginfast-server/app/controllers/auth.go");
+const authController = readServer("app/controllers/auth.go");
 
 assert.ok(userApi.includes("enabled: boolean"), "captcha API type must expose whether captcha is enabled");
 
