@@ -23,7 +23,7 @@
                         </template>
                     </a-input-password>
                 </a-form-item>
-                <a-form-item field="verifyCode" :hide-asterisk="true" v-if="captchaConfig.open">
+                <a-form-item v-if="showCaptcha" field="captchaValue" :hide-asterisk="true">
                     <div class="verifyCode">
                         <a-input style="width: 160px" v-model="form.captchaValue" allow-clear placeholder="请输入验证码" />
                         <!-- <s-verify-code :content-height="30" :font-size-max="30" :content-width="110"
@@ -51,7 +51,7 @@
 import { useRouter } from "vue-router";
 import { useRouteConfigStore } from "@/store/modules/route-config";
 import { useUserStoreHook } from "@/store/modules/user";
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { getVerifyImgString } from "@/api/user";
 import { useSystemStore } from "@/store/modules/system";
 import { useSysConfigStore } from "@/store/modules/sys-config";
@@ -59,7 +59,7 @@ import { useSysConfigStore } from "@/store/modules/sys-config";
 import { storeToRefs } from "pinia";
 // 获取系统配置
 const sysConfigStore = useSysConfigStore();
-const { captchaConfig, systemConfig } = storeToRefs(sysConfigStore);
+const { systemConfig } = storeToRefs(sysConfigStore);
 // 定义表单数据类型
 interface LoginForm {
     tenantCode: string;
@@ -82,10 +82,11 @@ const form = ref<LoginForm>({
     captchaValue: null,
     captchaId: ""
 });
+const showCaptcha = ref(false);
 
 
 // 表单验证规则
-const rules = ref({
+const rules = computed(() => ({
     username: [
         {
             required: true,
@@ -98,13 +99,13 @@ const rules = ref({
             message: "请输入密码"
         }
     ],
-    captchaValue: [
+    captchaValue: showCaptcha.value ? [
         {
             required: true,
             message: "请输入验证码"
         }
-    ]
-});
+    ] : []
+}));
 
 // 提交表单
 const onSubmit = async ({ errors }: { errors: Record<string, any> | undefined }) => {
@@ -140,7 +141,9 @@ const onLogin = async () => {
         console.error("登录失败:", error);
         //arcoMessage("error", typeof error === "string" ? error : "登录失败，请检查用户名和密码");
         form.value.captchaId = "";
-        refreshCaptcha();
+        if (showCaptcha.value) {
+            refreshCaptcha();
+        }
     } finally {
         loginLoading.value = false;
     }
@@ -150,6 +153,14 @@ const onLogin = async () => {
 const captchaImgUrl = ref("");
 const refreshCaptcha = () => {
     getVerifyImgString().then(res => {
+        showCaptcha.value = res.data.enabled;
+        if (!res.data.enabled) {
+            form.value.captchaValue = null;
+            form.value.captchaId = "";
+            captchaImgUrl.value = "";
+            return;
+        }
+
         form.value.captchaId = res.data.captchaId;
         captchaImgUrl.value = res.data.image;
     }).catch(err => {
@@ -171,9 +182,7 @@ watch(systemConfig, (newConfig) => {
 
 // 组件挂载时的初始化
 onMounted(async () => {
-    if (captchaConfig.value.open) {
-        refreshCaptcha();
-    }
+    refreshCaptcha();
 });
 </script>
 

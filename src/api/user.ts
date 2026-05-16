@@ -55,6 +55,7 @@ export type ProfileResult = BaseResult<ProfileItem>;
 
 
 export type VerifyImgResult = BaseResult<{
+    enabled: boolean;
     captchaId: string;
     image: string;
 }>;
