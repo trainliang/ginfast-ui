@@ -140,7 +140,7 @@
       </a-form>
     </a-modal>
 
-    <a-drawer v-model:visible="memberDrawerVisible" :width="isMobile ? '100%' : 760" :footer="false">
+    <a-drawer v-model:visible="memberDrawerVisible" :width="isMobile ? '100%' : 1000" :footer="false">
       <template #title>班级成员 - {{ currentClass?.name }}</template>
       <a-space direction="vertical" fill size="medium">
         <a-space wrap>
@@ -166,12 +166,13 @@
             <a-table-column title="状态" :width="100">
               <template #cell="{ record }">{{ labelOf(memberStatusOptions, record.status) }}</template>
             </a-table-column>
-            <a-table-column title="入班日期" data-index="joinDate" :width="140" />
-            <a-table-column title="备注" data-index="remark" ellipsis tooltip />
-            <a-table-column title="操作" :width="140" align="center">
+            <a-table-column title="入班日期" data-index="joinDate" :width="120" />
+            <a-table-column title="离班日期" data-index="leaveDate" :width="120" />
+            <a-table-column title="备注" data-index="remark" :width="140" ellipsis tooltip />
+            <a-table-column title="操作" :width="120" align="center">
               <template #cell="{ record }">
                 <a-space>
-                  <a-link @click="editMember(record)">编辑</a-link>
+                  <a-link @click="editMember(record)" v-hasPerm="['edu:class:member']">编辑</a-link>
                   <a-popconfirm content="确定移除该成员吗？" @ok="deleteMember(record.id)">
                     <a-link status="danger">移除</a-link>
                   </a-popconfirm>
@@ -182,6 +183,44 @@
         </a-table>
       </a-space>
     </a-drawer>
+
+    <a-modal
+      v-model:visible="memberEditVisible"
+      :title="memberEditTitle"
+      :width="isMobile ? '95%' : 600"
+      :on-before-ok="handleSaveMemberEdit"
+      @cancel="resetMemberEditForm"
+      @close="resetMemberEditForm"
+      footer-hide
+    >
+      <a-form ref="memberFormRef" :model="memberEditModel" :rules="memberRules" auto-label-width>
+        <a-form-item field="studentId" label="学生">
+          <a-select v-model="memberEditModel.studentId" placeholder="选择学生" allow-search allow-clear>
+            <a-option v-for="item in studentOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item field="status" label="状态">
+          <a-select v-model="memberEditModel.status" placeholder="选择状态">
+            <a-option v-for="item in memberStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item field="joinDate" label="入班日期">
+          <a-date-picker v-model="memberEditModel.joinDate" placeholder="选择日期" value-format="YYYY-MM-DD" style="width: 100%" />
+        </a-form-item>
+        <a-form-item field="leaveDate" label="离班日期">
+          <a-date-picker v-model="memberEditModel.leaveDate" placeholder="选择日期" value-format="YYYY-MM-DD" style="width: 100%" />
+        </a-form-item>
+        <a-form-item field="remark" label="备注">
+          <a-textarea v-model="memberEditModel.remark" placeholder="请输入备注" />
+        </a-form-item>
+        <a-form-item>
+          <a-space>
+            <a-button type="primary" @click="handleSaveMemberEdit">保存</a-button>
+            <a-button @click="memberEditVisible = false">取消</a-button>
+          </a-space>
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
     <import-dialog
       v-model:visible="importVisible"
@@ -220,6 +259,7 @@ import {
   type EduClassListParams,
   type EduClassMemberAddParams,
   type EduClassMemberItem,
+  type EduClassMemberUpdateParams,
   type EduCourseOptionItem,
   type EduRoomOptionItem,
   type EduStudentItem,
@@ -296,6 +336,22 @@ const memberForm = ref<EduClassMemberAddParams & { id?: number }>({
   status: "studying",
   remark: "",
 });
+
+const memberEditVisible = ref(false);
+const memberEditTitle = ref("编辑成员");
+const memberFormRef = ref();
+const memberEditModel = ref<EduClassMemberAddParams & { id?: number }>({
+  classId: 0,
+  studentId: undefined as unknown as number,
+  joinDate: "",
+  leaveDate: "",
+  status: "studying",
+  remark: "",
+});
+const memberRules: Record<string, any> = {
+  studentId: [{ required: true, message: "请选择学生" }],
+  status: [{ required: true, message: "请选择状态" }],
+};
 
 const courseName = (id?: number) => courseOptions.value.find((item) => item.id === id)?.name ?? "-";
 const roomName = (id?: number) => roomOptions.value.find((item) => item.id === id)?.name ?? "-";
@@ -437,7 +493,37 @@ const handleSaveMember = async () => {
 };
 
 const editMember = (record: EduClassMemberItem) => {
-  memberForm.value = { ...record };
+  memberEditTitle.value = `编辑成员 - ${studentName(record.studentId)}`;
+  memberEditModel.value = { ...record };
+  memberEditVisible.value = true;
+};
+
+const resetMemberEditForm = () => {
+  memberFormRef.value?.resetFields?.();
+  memberEditModel.value = {
+    classId: 0,
+    studentId: undefined as unknown as number,
+    joinDate: "",
+    leaveDate: "",
+    status: "studying",
+    remark: "",
+  };
+};
+
+const handleSaveMemberEdit = async () => {
+  try {
+    const errors = await memberFormRef.value?.validate?.();
+    if (errors) return false;
+    if (!currentClass.value || !memberEditModel.value.id) return false;
+    await editEduClassMemberAPI(currentClass.value.id, memberEditModel.value as EduClassMemberUpdateParams);
+    Message.success("成员更新成功");
+    memberEditVisible.value = false;
+    resetMemberEditForm();
+    fetchMembers();
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 const deleteMember = async (id: number) => {

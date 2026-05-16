@@ -127,12 +127,17 @@ export interface EduBenefitExternalSyncListParams {
 }
 
 export type EduBenefitProductListResult = BaseResult<{ list: EduBenefitProductItem[]; total: number }>;
+export type EduBenefitProductOptionsResult = BaseResult<{ list: EduBenefitProductItem[] }>;
 export type EduStudentBenefitListResult = BaseResult<{ list: EduStudentBenefitItem[]; total: number }>;
 export type EduBenefitLedgerListResult = BaseResult<{ list: EduBenefitLedgerItem[]; total: number }>;
 export type EduBenefitExternalSyncListResult = BaseResult<{ list: EduBenefitExternalSyncItem[]; total: number }>;
 
 export const getEduBenefitProductListAPI = (params?: EduBenefitProductListParams) => {
   return http.request<EduBenefitProductListResult>("get", baseUrlApi("edu/benefit-products/list"), { params });
+};
+
+export const getEduBenefitProductOptionsAPI = () => {
+  return http.request<EduBenefitProductOptionsResult>("get", baseUrlApi("edu/benefit-products/options"));
 };
 
 export const addEduBenefitProductAPI = (data: EduBenefitProductAddParams) => {

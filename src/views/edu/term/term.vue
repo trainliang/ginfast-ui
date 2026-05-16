@@ -91,7 +91,7 @@ const loading = ref(false);
 const dataList = ref<EduTermItem[]>([]);
 const searchForm = reactive<EduTermListParams>({});
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true });
-const emptyForm = (): EduTermAddParams & { id?: number } => ({ name: "", startDate: "", endDate: "", status: 1 });
+const emptyForm = (): EduTermAddParams & { id?: string } => ({ name: "", startDate: "", endDate: "", status: 1 });
 const modalVisible = ref(false);
 const formRef = ref();
 const formModel = ref(emptyForm());
@@ -105,7 +105,7 @@ const handleCreate = () => { formModel.value = emptyForm(); modalVisible.value =
 const handleEdit = (record: TableData) => { formModel.value = { ...emptyForm(), ...(record as EduTermItem) }; modalVisible.value = true; };
 const resetForm = () => { formRef.value?.resetFields?.(); formModel.value = emptyForm(); };
 const handleSave = async () => { try { const errors = await formRef.value?.validate?.(); if (errors) return false; const payload = formModel.value; if (payload.id) await editEduTermAPI({ ...payload, id: payload.id }); else await addEduTermAPI(payload); Message.success("学期保存成功"); await fetchList(); resetForm(); return true; } catch { return false; } };
-const handleDelete = async (id: number) => { await deleteEduTermAPI({ id }); Message.success("学期删除成功"); fetchList(); };
+const handleDelete = async (id: string) => { await deleteEduTermAPI({ id }); Message.success("学期删除成功"); fetchList(); };
 const currentTerm = ref<EduTermItem | null>(null);
 const closedDayDrawerVisible = ref(false);
 const closedDayRows = ref<EduTermClosedDayItem[]>([]);

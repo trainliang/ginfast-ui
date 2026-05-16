@@ -3,25 +3,25 @@ import { BaseResult } from "../types";
 import { baseUrlApi } from "../utils";
 
 export interface EduScheduleRuleItem {
-  id: number;
+  id: string;
   createdAt?: string;
   updatedAt?: string;
   name: string;
   ruleType: "class" | "one_to_one";
   repeatType: "single" | "weekly";
-  termId?: number;
+  termId?: string;
   startDate?: string | null;
   endDate?: string | null;
-  weekday?: number;
+  weekdays?: number[];
   startTime: string;
   endTime: string;
-  classId?: number;
-  studentId?: number;
-  courseId?: number;
-  teacherId?: number;
+  classId?: string;
+  studentId?: string;
+  courseId?: string;
+  teacherId?: string;
   teachingMode?: string;
   requiresRoom?: number;
-  roomId?: number;
+  roomId?: string;
   version?: number;
   effectiveFrom?: string | null;
   status?: number;
@@ -35,35 +35,35 @@ export interface EduScheduleRuleListParams {
   name?: string;
   ruleType?: string;
   repeatType?: string;
-  termId?: number;
-  classId?: number;
-  studentId?: number;
-  courseId?: number;
-  teacherId?: number;
+  termId?: string;
+  classId?: string;
+  studentId?: string;
+  courseId?: string;
+  teacherId?: string;
   status?: number;
 }
 
 export type EduScheduleRuleAddParams = Omit<EduScheduleRuleItem, "id" | "createdAt" | "updatedAt">;
 
 export interface EduScheduleRuleUpdateParams extends EduScheduleRuleAddParams {
-  id: number;
+  id: string;
 }
 
 export interface EduLessonItem {
-  id: number;
+  id: string;
   createdAt?: string;
   updatedAt?: string;
-  ruleId?: number;
+  ruleId?: string;
   lessonDate: string;
   startTime: string;
   endTime: string;
-  courseId?: number;
-  classId?: number;
-  studentId?: number;
-  teacherId?: number;
+  courseId?: string;
+  classId?: string;
+  studentId?: string;
+  teacherId?: string;
   teachingMode?: string;
   requiresRoom?: number;
-  roomId?: number;
+  roomId?: string;
   status?: string;
   remark?: string;
 }
@@ -72,40 +72,40 @@ export interface EduLessonListParams {
   pageNum?: number;
   pageSize?: number;
   order?: string;
-  id?: number;
-  ruleId?: number;
+  id?: string;
+  ruleId?: string;
   status?: string;
-  classId?: number;
-  studentId?: number;
-  courseId?: number;
-  teacherId?: number;
+  classId?: string;
+  studentId?: string;
+  courseId?: string;
+  teacherId?: string;
 }
 
 export interface EduLessonCalendarParams {
   startDate?: string;
   endDate?: string;
-  classId?: number;
-  teacherId?: number;
-  studentId?: number;
-  roomId?: number;
+  classId?: string;
+  teacherId?: string;
+  studentId?: string;
+  roomId?: string;
 }
 
 export interface EduScheduleConflictCheckParams {
-  lessonId?: number;
-  ruleId?: number;
+  lessonId?: string;
+  ruleId?: string;
   lessonDate?: string;
-  classId?: number;
-  studentId?: number;
-  courseId?: number;
-  teacherId?: number;
+  classId?: string;
+  studentId?: string;
+  courseId?: string;
+  teacherId?: string;
   teachingMode?: string;
   requiresRoom?: number;
-  roomId?: number;
+  roomId?: string;
   startTime?: string;
   endTime?: string;
   allowConflictOverride?: boolean;
   overrideReason?: string;
-  operatorID?: number;
+  operatorID?: string;
 }
 
 export type EduScheduleRuleListResult = BaseResult<{ list: EduScheduleRuleItem[]; total: number }>;
@@ -119,45 +119,45 @@ export interface EduScheduleConflictItem {
 export type EduScheduleConflictCheckResult = BaseResult<{ items?: EduScheduleConflictItem[]; hasConflict?: boolean }>;
 export type EduSchedulePreviewChangeResult = BaseResult<{ list?: EduLessonItem[] }>;
 export interface EduLessonChangeLogItem {
-  id: number;
+  id: string;
   createdAt?: string;
   updatedAt?: string;
-  lessonId?: number;
-  ruleId?: number;
+  lessonId?: string;
+  ruleId?: string;
   actionType?: string;
   beforeData?: string;
   afterData?: string;
   reason?: string;
-  operatorId?: number;
+  operatorId?: string;
   occurredAt?: string;
 }
 export type EduLessonChangeLogsResult = BaseResult<{ list?: EduLessonChangeLogItem[] }>;
 
 export interface EduLessonRescheduleParams {
-  lessonId: number;
+  lessonId: string;
   lessonDate: string;
   startTime: string;
   endTime: string;
-  teacherId: number;
+  teacherId: string;
   teachingMode: string;
-  roomId?: number;
+  roomId?: string;
   allowConflictOverride?: boolean;
   overrideReason?: string;
 }
 
 export interface EduLessonStatusActionParams {
-  lessonId: number;
+  lessonId: string;
   reason: string;
 }
 
 export interface EduLessonMakeupParams {
-  lessonId: number;
+  lessonId: string;
   lessonDate: string;
   startTime: string;
   endTime: string;
-  teacherId: number;
+  teacherId: string;
   teachingMode: string;
-  roomId?: number;
+  roomId?: string;
   reason: string;
   allowConflictOverride?: boolean;
   overrideReason?: string;
@@ -175,11 +175,11 @@ export const editEduScheduleRuleAPI = (data: EduScheduleRuleUpdateParams) => {
   return http.request<BaseResult>("put", baseUrlApi("edu/schedule-rules/edit"), { data });
 };
 
-export const deleteEduScheduleRuleAPI = (data: { id: number }) => {
+export const deleteEduScheduleRuleAPI = (data: { id: string }) => {
   return http.request<BaseResult>("delete", baseUrlApi("edu/schedule-rules/delete"), { data });
 };
 
-export const previewEduScheduleRuleChangeAPI = (data: { id: number }) => {
+export const previewEduScheduleRuleChangeAPI = (data: { id: string }) => {
   return http.request<EduSchedulePreviewChangeResult>("post", baseUrlApi("edu/schedule-rules/preview-change"), {
     data,
   });
@@ -217,6 +217,6 @@ export const makeupEduLessonAPI = (data: EduLessonMakeupParams) => {
   return http.request<BaseResult>("post", baseUrlApi("edu/lessons/makeup"), { data });
 };
 
-export const getEduLessonChangeLogsAPI = (lessonId: number) => {
+export const getEduLessonChangeLogsAPI = (lessonId: string) => {
   return http.request<EduLessonChangeLogsResult>("get", baseUrlApi(`edu/lessons/${lessonId}/change-logs`));
 };

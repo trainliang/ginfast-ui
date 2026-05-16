@@ -3,7 +3,7 @@ import { BaseResult } from "../types";
 import { baseUrlApi } from "../utils";
 
 export interface EduTermItem {
-  id: number;
+  id: string;
   createdAt?: string;
   updatedAt?: string;
   name: string;
@@ -16,7 +16,7 @@ export interface EduTermListParams {
   pageNum?: number;
   pageSize?: number;
   order?: string;
-  id?: number;
+  id?: string;
   name?: string;
   status?: number;
 }
@@ -24,12 +24,12 @@ export interface EduTermListParams {
 export type EduTermAddParams = Omit<EduTermItem, "id" | "createdAt" | "updatedAt">;
 
 export interface EduTermUpdateParams extends EduTermAddParams {
-  id: number;
+  id: string;
 }
 
 export interface EduTermClosedDayItem {
-  id?: number;
-  termId?: number;
+  id?: string;
+  termId?: string;
   closedDate: string;
   reason?: string;
 }
@@ -57,15 +57,15 @@ export const editEduTermAPI = (data: EduTermUpdateParams) => {
   return http.request<BaseResult>("put", baseUrlApi("edu/terms/edit"), { data });
 };
 
-export const deleteEduTermAPI = (data: { id: number }) => {
+export const deleteEduTermAPI = (data: { id: string }) => {
   return http.request<BaseResult>("delete", baseUrlApi("edu/terms/delete"), { data });
 };
 
-export const getEduTermClosedDaysAPI = (id: number) => {
+export const getEduTermClosedDaysAPI = (id: string) => {
   return http.request<EduTermClosedDaysListResult>("get", baseUrlApi(`edu/terms/${id}/closed-days`));
 };
 
-export const saveEduTermClosedDaysAPI = (id: number, rows: EduTermClosedDayItem[]) => {
+export const saveEduTermClosedDaysAPI = (id: string, rows: EduTermClosedDayItem[]) => {
   return http.request<BaseResult>("post", baseUrlApi(`edu/terms/${id}/closed-days/save`), {
     data: { rows },
   });

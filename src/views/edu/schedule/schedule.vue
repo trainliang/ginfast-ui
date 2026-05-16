@@ -52,8 +52,8 @@
               <a-table-column title="日期范围" :width="180">
                 <template #cell="{ record }">{{ dateRangeText(record.startDate, record.endDate) }}</template>
               </a-table-column>
-              <a-table-column title="星期" :width="100" align="center">
-                <template #cell="{ record }">{{ weekdayText(record.weekday) }}</template>
+              <a-table-column title="星期" :width="120" align="center">
+                <template #cell="{ record }">{{ weekdaysText(record.weekdays) }}</template>
               </a-table-column>
               <a-table-column title="时间" :width="140" align="center">
                 <template #cell="{ record }">{{ timeRangeText(record.startTime, record.endTime) }}</template>
@@ -243,8 +243,8 @@
         </a-form-item>
         <a-form-item field="startDate" label="开始日期"><a-date-picker v-model="ruleForm.startDate" value-format="YYYY-MM-DD" style="width: 100%" /></a-form-item>
         <a-form-item field="endDate" label="结束日期"><a-date-picker v-model="ruleForm.endDate" value-format="YYYY-MM-DD" style="width: 100%" /></a-form-item>
-        <a-form-item v-if="ruleForm.repeatType === 'weekly'" field="weekday" label="星期">
-          <a-select v-model="ruleForm.weekday" placeholder="请选择星期" allow-clear>
+        <a-form-item v-if="ruleForm.repeatType === 'weekly'" field="weekdays" label="星期">
+          <a-select v-model="ruleForm.weekdays" placeholder="请选择星期" allow-clear multiple>
             <a-option v-for="item in weekdayOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
           </a-select>
         </a-form-item>
@@ -299,42 +299,49 @@
       <a-descriptions :column="1" bordered size="small">
         <a-descriptions-item label="课次日期">{{ selectedLesson.lessonDate || "-" }}</a-descriptions-item>
         <a-descriptions-item label="时间">{{ timeRangeText(selectedLesson.startTime, selectedLesson.endTime) }}</a-descriptions-item>
+        <a-descriptions-item label="课次类型">{{ lessonTypeText(selectedLesson) }}</a-descriptions-item>
         <a-descriptions-item label="课程">{{ courseName(selectedLesson.courseId) }}</a-descriptions-item>
         <a-descriptions-item label="教师">{{ teacherName(selectedLesson.teacherId) }}</a-descriptions-item>
         <a-descriptions-item label="班级">{{ className(selectedLesson.classId) }}</a-descriptions-item>
         <a-descriptions-item label="学生">{{ studentName(selectedLesson.studentId) }}</a-descriptions-item>
+        <a-descriptions-item label="授课方式">{{ labelOf(teachingModeOptions, selectedLesson.teachingMode) }}</a-descriptions-item>
         <a-descriptions-item label="场地">{{ roomName(selectedLesson.roomId) }}</a-descriptions-item>
         <a-descriptions-item label="状态">{{ labelOf(lessonStatusOptions, selectedLesson.status) }}</a-descriptions-item>
+        <a-descriptions-item label="备注">
+          <span :class="{ 'color-text-3': !selectedLesson.remark }">{{ selectedLesson.remark || "无" }}</span>
+        </a-descriptions-item>
       </a-descriptions>
 
       <a-space wrap style="margin-top: 16px">
-        <a-button type="primary" @click="handleLessonAction('reschedule')">调课</a-button>
-        <a-button @click="handleLessonAction('stop')">停课</a-button>
-        <a-button @click="handleLessonAction('cancel')">取消</a-button>
-        <a-button @click="handleLessonAction('restore')">恢复</a-button>
-        <a-button @click="handleLessonAction('makeup')">补课</a-button>
+        <a-button v-if="canReschedule" type="primary" @click="handleLessonAction('reschedule')">调课</a-button>
+        <a-button v-if="canStop" status="warning" @click="handleLessonAction('stop')">停课</a-button>
+        <a-button v-if="canCancel" status="danger" @click="handleLessonAction('cancel')">取消</a-button>
+        <a-button v-if="canRestore" type="primary" @click="handleLessonAction('restore')">恢复</a-button>
+        <a-button v-if="canMakeup" type="primary" @click="handleLessonAction('makeup')">补课</a-button>
         <a-button @click="handleLessonAction('history')">变更历史</a-button>
       </a-space>
 
-      <a-alert
-        style="margin-top: 16px"
-        type="info"
-        :show-icon="false"
-        message="当前版本先提供课次详情、动作入口、基础提交和变更历史预览。完整调课/补课表单将在后续任务继续收紧。"
-      />
+      <div v-if="loadingHistory" style="margin-top: 16px; text-align: center">
+        <a-spin />
+      </div>
 
       <div class="lesson-history" v-if="lessonHistoryRows.length > 0">
-        <div class="lesson-history__title">变更历史</div>
+        <a-divider />
+        <div class="lesson-history__title">
+          <icon-history />
+          变更历史
+        </div>
         <a-timeline>
           <a-timeline-item v-for="item in lessonHistoryRows" :key="item.id">
             <div class="lesson-history__item">
-              <strong>{{ item.actionType || "-" }}</strong>
+              <strong>{{ actionTypeLabel(item.actionType) }}</strong>
               <span>{{ item.occurredAt || item.createdAt || "-" }}</span>
             </div>
             <div class="lesson-history__reason">{{ item.reason || "无原因" }}</div>
           </a-timeline-item>
         </a-timeline>
       </div>
+      <a-empty v-else-if="!loadingHistory && lessonDrawerVisible" description="暂无变更历史" style="margin-top: 16px" />
     </a-drawer>
   </div>
 </template>
@@ -396,7 +403,7 @@ const rulePagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal:
 
 const lessonLoading = ref(false);
 const lessonList = ref<EduLessonItem[]>([]);
-const lessonSearchForm = reactive<{ status?: string; classId?: number; studentId?: number; teacherId?: number }>({});
+const lessonSearchForm = reactive<{ status?: string; classId?: string; studentId?: string; teacherId?: string }>({});
 const lessonPagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true });
 
 const calendarView = ref("week");
@@ -407,19 +414,19 @@ const calendarViewOptions = [
 ];
 const calendarLoading = ref(false);
 const calendarList = ref<EduLessonItem[]>([]);
-const calendarSearchForm = reactive<{ teacherId?: number; roomId?: number; classId?: number; studentId?: number }>({});
+const calendarSearchForm = reactive<{ teacherId?: string; roomId?: string; classId?: string; studentId?: string }>({});
 const calendarPagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true });
 
 const ruleModalVisible = ref(false);
 const ruleFormRef = ref();
-const emptyRuleForm = (): EduScheduleRuleAddParams & { id?: number } => ({
+const emptyRuleForm = (): EduScheduleRuleAddParams & { id?: string } => ({
   name: "",
   ruleType: "class",
   repeatType: "weekly",
   termId: undefined,
   startDate: "",
   endDate: "",
-  weekday: 1,
+  weekdays: [1],
   startTime: "09:00",
   endTime: "10:00",
   classId: undefined,
@@ -437,6 +444,17 @@ const ruleRules: Record<string, any> = {
   name: [{ required: true, message: "请输入规则名称" }],
   ruleType: [{ required: true, message: "请选择规则类型" }],
   repeatType: [{ required: true, message: "请选择重复方式" }],
+  weekdays: [
+    {
+      required: true,
+      validator: (value: any, callback: any) => {
+        if (ruleForm.value.repeatType === "weekly" && (!value || value.length === 0)) {
+          callback("每周重复时必须选择上课日");
+        }
+        callback();
+      },
+    },
+  ],
   startTime: [{ required: true, message: "请选择开始时间" }],
   endTime: [{ required: true, message: "请选择结束时间" }],
 };
@@ -449,8 +467,9 @@ const roomOptions = ref<EduRoomOptionItem[]>([]);
 const studentOptions = ref<EduStudentItem[]>([]);
 
 const lessonDrawerVisible = ref(false);
-const selectedLesson = ref<EduLessonItem>({ id: 0, lessonDate: "", startTime: "", endTime: "" });
+const selectedLesson = ref<EduLessonItem>({ id: "", lessonDate: "", startTime: "", endTime: "" });
 const lessonHistoryRows = ref<EduLessonChangeLogItem[]>([]);
+const loadingHistory = ref(false);
 const pagedCalendarList = computed(() => {
   const start = (calendarPagination.current - 1) * calendarPagination.pageSize;
   const end = start + calendarPagination.pageSize;
@@ -459,6 +478,12 @@ const pagedCalendarList = computed(() => {
 
 const showClassField = computed(() => ruleForm.value.ruleType === "class");
 const showStudentField = computed(() => ruleForm.value.ruleType === "one_to_one");
+
+const canReschedule = computed(() => selectedLesson.value.status === "scheduled");
+const canStop = computed(() => selectedLesson.value.status === "scheduled");
+const canCancel = computed(() => selectedLesson.value.status === "scheduled");
+const canRestore = computed(() => selectedLesson.value.status === "canceled" || selectedLesson.value.status === "stopped");
+const canMakeup = computed(() => selectedLesson.value.status === "canceled" || selectedLesson.value.status === "stopped");
 
 const fetchOptions = async () => {
   const [terms, classes, courses, teachers, rooms, students] = await Promise.all([
@@ -540,7 +565,7 @@ const buildRulePayload = () => {
     payload.classId = undefined;
   }
   if (payload.repeatType === "single") {
-    payload.weekday = 0;
+    payload.weekdays = [];
   }
   if (payload.requiresRoom === 0) {
     payload.roomId = undefined;
@@ -549,7 +574,7 @@ const buildRulePayload = () => {
 };
 
 const buildConflictPayload = () => ({
-  lessonId: 0,
+  lessonId: "0",
   ruleId: ruleForm.value.id,
   lessonDate: ruleForm.value.startDate || undefined,
   classId: ruleForm.value.classId,
@@ -577,7 +602,7 @@ const handleSaveRule = async () => {
       return false;
     }
     if (payload.id) {
-      const previewRes = await previewEduScheduleRuleChangeAPI({ id: Number(payload.id) });
+      const previewRes = await previewEduScheduleRuleChangeAPI({ id: payload.id });
       const previewCount = previewRes.data?.list?.length || 0;
       const confirmText = previewCount > 0 ? `将影响 ${previewCount} 条未来课次，是否继续保存？` : "当前规则没有可替换的未来课次，是否继续保存？";
       await new Promise<void>((resolve, reject) => {
@@ -585,8 +610,12 @@ const handleSaveRule = async () => {
           title: "变更预览",
           content: confirmText,
           onOk: async () => {
-            await editEduScheduleRuleAPI({ ...payload, id: Number(payload.id) });
-            resolve();
+            try {
+              await editEduScheduleRuleAPI({ ...payload, id: payload.id! });
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
           },
           onCancel: () => reject(new Error("cancel")),
         });
@@ -603,23 +632,29 @@ const handleSaveRule = async () => {
   }
 };
 
-const handleDeleteRule = async (id: number) => {
+const handleDeleteRule = async (id: string) => {
   await deleteEduScheduleRuleAPI({ id });
   Message.success("排课规则删除成功");
   fetchRuleList();
 };
 
-const termName = (id?: number) => termOptions.value.find((item) => item.id === id)?.name ?? "-";
-const className = (id?: number) => classOptions.value.find((item) => item.id === id)?.name ?? "-";
-const courseName = (id?: number) => courseOptions.value.find((item) => item.id === id)?.name ?? "-";
-const roomName = (id?: number) => roomOptions.value.find((item) => item.id === id)?.name ?? "-";
-const studentName = (id?: number) => studentOptions.value.find((item) => item.id === id)?.name ?? "-";
+const termName = (id?: string | number) => termOptions.value.find((item) => String(item.id) === String(id))?.name ?? "-";
+const className = (id?: string | number) => classOptions.value.find((item) => String(item.id) === String(id))?.name ?? "-";
+const courseName = (id?: string | number) => courseOptions.value.find((item) => String(item.id) === String(id))?.name ?? "-";
+const roomName = (id?: string | number) => roomOptions.value.find((item) => String(item.id) === String(id))?.name ?? "-";
+const studentName = (id?: string | number) => studentOptions.value.find((item) => String(item.id) === String(id))?.name ?? "-";
 const teacherLabel = (item: EduTeacherOptionItem) => item.name || item.nickName || item.username || "-";
-const teacherName = (id?: number) => {
-  const teacher = teacherOptions.value.find((item) => item.id === id);
+const teacherName = (id?: string | number) => {
+  const teacher = teacherOptions.value.find((item) => String(item.id) === String(id));
   return teacher ? teacherLabel(teacher) : "-";
 };
-const weekdayText = (weekday?: number) => weekdayOptions.find((item) => item.value === weekday)?.label ?? "-";
+const weekdaysText = (weekdays?: number[]) => {
+  if (!weekdays || weekdays.length === 0) return "-";
+  return weekdays
+    .map((weekday) => weekdayOptions.find((item) => item.value === weekday)?.label)
+    .filter((label): label is string => Boolean(label))
+    .join("，");
+};
 const dateRangeText = (start?: string | null, end?: string | null) => [start || "-", end || "-"].join(" ~ ");
 const timeRangeText = (start?: string, end?: string) => [start || "-", end || "-"].join(" ~ ");
 const calendarCardDay = (value?: string) => {
@@ -657,14 +692,47 @@ watch(calendarView, () => {
   handleCalendarSearch();
 });
 
-const openLessonDrawer = (record: EduLessonItem) => {
+watch(activeTab, (newTab) => {
+  if (newTab === "rules") fetchRuleList();
+  else if (newTab === "lessons") fetchLessonList();
+  else if (newTab === "calendar") fetchCalendarList();
+});
+
+const actionTypeLabelMap: Record<string, string> = {
+  generate: "规则生成",
+  regenerate: "规则重新生成",
+  reschedule: "调课",
+  stop: "停课",
+  cancel: "取消",
+  restore: "恢复",
+  makeup: "补课",
+};
+
+const actionTypeLabel = (type?: string) => (type ? actionTypeLabelMap[type] || type : "-");
+
+const lessonTypeText = (record: EduLessonItem) => {
+  if (record.classId) return "班课";
+  if (record.studentId) return "一对一";
+  return "-";
+};
+
+const openLessonDrawer = async (record: EduLessonItem) => {
   selectedLesson.value = { ...record };
   lessonHistoryRows.value = [];
   lessonDrawerVisible.value = true;
+  loadingHistory.value = true;
+  try {
+    const res = await getEduLessonChangeLogsAPI(record.id);
+    lessonHistoryRows.value = res.data.list || [];
+  } catch {
+    lessonHistoryRows.value = [];
+  } finally {
+    loadingHistory.value = false;
+  }
 };
 
 const handleLessonAction = async (action: "reschedule" | "stop" | "cancel" | "restore" | "makeup" | "history") => {
-  const lessonId = Number(selectedLesson.value.id);
+  const lessonId = selectedLesson.value.id;
   if (!lessonId) return;
   if (action === "history") {
     const res = await getEduLessonChangeLogsAPI(lessonId);
@@ -674,31 +742,34 @@ const handleLessonAction = async (action: "reschedule" | "stop" | "cancel" | "re
   }
   if (action === "reschedule") {
     const payload: EduLessonRescheduleParams = {
-      lessonId,
+      lessonId: String(selectedLesson.value.id),
       lessonDate: selectedLesson.value.lessonDate,
       startTime: selectedLesson.value.startTime,
       endTime: selectedLesson.value.endTime,
-      teacherId: Number(selectedLesson.value.teacherId || 0),
+      teacherId: selectedLesson.value.teacherId || "",
       teachingMode: selectedLesson.value.teachingMode || "online",
       roomId: selectedLesson.value.roomId,
     };
     await rescheduleEduLessonAPI(payload);
   } else if (action === "stop") {
-    const payload: EduLessonStatusActionParams = { lessonId, reason: "课表日历操作停课" };
+    const payload: EduLessonStatusActionParams = { lessonId: String(selectedLesson.value.id), reason: "课表日历操作停课" };
     await stopEduLessonAPI(payload);
+    selectedLesson.value.status = "stopped";
   } else if (action === "cancel") {
-    const payload: EduLessonStatusActionParams = { lessonId, reason: "课表日历操作取消" };
+    const payload: EduLessonStatusActionParams = { lessonId: String(selectedLesson.value.id), reason: "课表日历操作取消" };
     await cancelEduLessonAPI(payload);
+    selectedLesson.value.status = "canceled";
   } else if (action === "restore") {
-    const payload: EduLessonStatusActionParams = { lessonId, reason: "课表日历操作恢复" };
+    const payload: EduLessonStatusActionParams = { lessonId: String(selectedLesson.value.id), reason: "课表日历操作恢复" };
     await restoreEduLessonAPI(payload);
+    selectedLesson.value.status = "scheduled";
   } else if (action === "makeup") {
     const payload: EduLessonMakeupParams = {
-      lessonId,
+      lessonId: String(selectedLesson.value.id),
       lessonDate: selectedLesson.value.lessonDate,
       startTime: selectedLesson.value.startTime,
       endTime: selectedLesson.value.endTime,
-      teacherId: Number(selectedLesson.value.teacherId || 0),
+      teacherId: selectedLesson.value.teacherId || "",
       teachingMode: selectedLesson.value.teachingMode || "online",
       roomId: selectedLesson.value.roomId,
       reason: "课表日历发起补课",
@@ -708,6 +779,8 @@ const handleLessonAction = async (action: "reschedule" | "stop" | "cancel" | "re
   Message.success("操作已提交");
   await fetchCalendarList();
   await fetchLessonList();
+  const res = await getEduLessonChangeLogsAPI(selectedLesson.value.id);
+  lessonHistoryRows.value = res.data.list || [];
 };
 
 onMounted(async () => {

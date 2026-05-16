@@ -50,6 +50,7 @@ includes("src/api/edu.ts", 'export * from "./edu/schedule";');
   "edu/lessons/makeup",
   "change-logs",
   "edu/schedules/check-conflicts",
+  "weekdays",
 ].forEach((text) => includes("src/api/edu/schedule.ts", text));
 
 [
@@ -82,6 +83,10 @@ includes("src/api/edu.ts", 'export * from "./edu/schedule";');
   "场地",
   "班级",
   "学生",
+  "weekdays",
 ].forEach((text) => includes("src/views/edu/schedule/schedule.vue", text));
+
+includes("src/api/edu/schedule.ts", "id: string;");
+includes("src/views/edu/schedule/schedule.vue", "v-model=\"ruleForm.weekdays\"");
 
 console.log("contract ok");

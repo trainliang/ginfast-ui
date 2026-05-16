@@ -107,6 +107,15 @@ includes("src/api/edu.ts", 'export * from "./edu/benefit";');
   "续费修复",
   "外部同步",
   "新增学生权益",
+  "getEduStudentListAPI",
+  "getEduCourseOptionsAPI",
+  "getEduBenefitProductOptionsAPI",
+  "studentOptions",
+  "courseOptions",
+  "productOptions",
+  "选择学生",
+  "选择课程",
+  "选择产品",
 ].forEach((text) => includes("src/views/edu/benefit/student-benefit.vue", text));
 
 console.log("contract ok");

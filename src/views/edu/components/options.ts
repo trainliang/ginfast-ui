@@ -63,6 +63,22 @@ export const benefitCheckPolicyOptions = [
   { label: "不检", value: "none" },
 ];
 
+export const studentTypeOptions = [
+  { label: "正式", value: "formal" },
+  { label: "体验", value: "trial" },
+  { label: "VIP", value: "vip" },
+];
+
+export const sourceChannelOptions = [
+  { label: "微信", value: "wechat" },
+  { label: "电话", value: "phone" },
+  { label: "推荐", value: "referral" },
+  { label: "线下广告", value: "offline_ad" },
+  { label: "线上广告", value: "online_ad" },
+  { label: "地推", value: "ground" },
+  { label: "其他", value: "other" },
+];
+
 export const memberStatusOptions = [
   { label: "在读", value: "studying" },
   { label: "暂停", value: "paused" },

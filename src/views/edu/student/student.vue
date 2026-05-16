@@ -11,6 +11,11 @@
                 {{ item.label }}
               </a-option>
             </a-select>
+            <a-select v-model="searchForm.studentType" placeholder="学生类型" allow-clear style="width: 140px">
+              <a-option v-for="item in studentTypeOptions" :key="item.value" :value="item.value">
+                {{ item.label }}
+              </a-option>
+            </a-select>
             <a-input v-model="searchForm.school" placeholder="学校" allow-clear />
             <a-button type="primary" @click="handleSearch">
               <template #icon><icon-search /></template>
@@ -53,13 +58,18 @@
               </a-tag>
             </template>
           </a-table-column>
+          <a-table-column title="学生类型" :width="100" align="center">
+            <template #cell="{ record }">{{ labelOf(studentTypeOptions, record.studentType) }}</template>
+          </a-table-column>
           <a-table-column title="性别" :width="90" align="center">
             <template #cell="{ record }">{{ labelOf(genderOptions, record.gender) }}</template>
           </a-table-column>
           <a-table-column title="联系电话" data-index="phone" :width="130" />
           <a-table-column title="学校" data-index="school" :width="160" ellipsis tooltip />
           <a-table-column title="年级" data-index="grade" :width="100" />
-          <a-table-column title="来源" data-index="sourceChannel" :width="120" />
+          <a-table-column title="来源" data-index="sourceChannel" :width="120">
+            <template #cell="{ record }">{{ labelOf(sourceChannelOptions, record.sourceChannel) || record.sourceChannel }}</template>
+          </a-table-column>
           <a-table-column title="紧急联系人" data-index="emergencyContact" :width="140" />
           <a-table-column title="接送备注" data-index="pickupNote" :width="180" ellipsis tooltip />
           <a-table-column title="操作" :width="180" align="center" :fixed="isMobile ? '' : 'right'">
@@ -101,6 +111,11 @@
             <a-option v-for="item in studentStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
           </a-select>
         </a-form-item>
+        <a-form-item field="studentType" label="学生类型">
+          <a-select v-model="formModel.studentType" placeholder="请选择学生类型" allow-clear>
+            <a-option v-for="item in studentTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+          </a-select>
+        </a-form-item>
         <a-form-item field="school" label="学校">
           <a-input v-model="formModel.school" placeholder="请输入学校" allow-clear />
         </a-form-item>
@@ -108,7 +123,9 @@
           <a-input v-model="formModel.grade" placeholder="请输入年级" allow-clear />
         </a-form-item>
         <a-form-item field="sourceChannel" label="来源渠道">
-          <a-input v-model="formModel.sourceChannel" placeholder="请输入来源渠道" allow-clear />
+          <a-select v-model="formModel.sourceChannel" placeholder="请选择或输入来源渠道" allow-clear allow-create>
+            <a-option v-for="item in sourceChannelOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
+          </a-select>
         </a-form-item>
         <a-form-item field="emergencyContact" label="紧急联系人">
           <a-input v-model="formModel.emergencyContact" placeholder="请输入紧急联系人" allow-clear />
@@ -152,7 +169,7 @@ import {
 } from "@/api/edu";
 import ImportDialog from "../components/import-dialog.vue";
 import { exportRowsToXlsx, type ExportColumn } from "../components/export-tools";
-import { genderOptions, labelOf, studentStatusOptions } from "../components/options";
+import { genderOptions, labelOf, sourceChannelOptions, studentStatusOptions, studentTypeOptions } from "../components/options";
 
 const { isMobile } = useDevicesSize();
 
@@ -171,6 +188,7 @@ const emptyForm = (): EduStudentAddParams & { id?: number } => ({
   phone: "",
   gender: "unknown",
   status: 1,
+  studentType: "formal",
   school: "",
   grade: "",
   sourceChannel: "",
@@ -194,6 +212,7 @@ const exportColumns: ExportColumn<Record<string, unknown>>[] = [
   { title: "状态", key: "status" },
   { title: "学校", key: "school" },
   { title: "年级", key: "grade" },
+  { title: "学生类型", key: "studentType" },
   { title: "来源渠道", key: "sourceChannel" },
   { title: "紧急联系人", key: "emergencyContact" },
   { title: "接送备注", key: "pickupNote" },
@@ -225,7 +244,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-  Object.assign(searchForm, { name: undefined, phone: undefined, status: undefined, school: undefined });
+  Object.assign(searchForm, { name: undefined, phone: undefined, status: undefined, studentType: undefined, school: undefined });
   handleSearch();
 };
 

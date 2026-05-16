@@ -4,8 +4,12 @@
       <s-layout-tools>
         <template #left>
           <a-space wrap>
-            <a-input-number v-model="searchForm.studentId" placeholder="学生ID" :min="1" allow-clear style="width: 130px" />
-            <a-input-number v-model="searchForm.courseId" placeholder="课程ID" :min="1" allow-clear style="width: 130px" />
+            <a-select v-model="searchForm.studentId" placeholder="选择学生" allow-search allow-clear style="width: 180px">
+              <a-option v-for="item in studentOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+            </a-select>
+            <a-select v-model="searchForm.courseId" placeholder="选择课程" allow-search allow-clear style="width: 180px">
+              <a-option v-for="item in courseOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+            </a-select>
             <a-select v-model="searchForm.status" placeholder="状态" allow-clear style="width: 120px">
               <a-option v-for="item in benefitStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
             </a-select>
@@ -43,15 +47,27 @@
         @page-size-change="handlePageSizeChange"
       >
         <template #columns>
-          <a-table-column title="学生ID" data-index="studentId" :width="100" fixed="left" />
-          <a-table-column title="产品ID" data-index="productId" :width="100" />
+          <a-table-column title="学生" :width="160" fixed="left" ellipsis tooltip>
+            <template #cell="{ record }">{{ studentName(record.studentId) }}</template>
+          </a-table-column>
+          <a-table-column title="产品" :width="160" ellipsis tooltip>
+            <template #cell="{ record }">{{ productName(record.productId) }}</template>
+          </a-table-column>
           <a-table-column title="权益类型" :width="110">
             <template #cell="{ record }">{{ labelOf(benefitTypeOptions, record.benefitType) }}</template>
           </a-table-column>
           <a-table-column title="核算方式" :width="130">
             <template #cell="{ record }">{{ labelOf(calculationModeOptions, record.calculationMode) }}</template>
           </a-table-column>
-          <a-table-column title="课程ID" data-index="courseId" :width="100" />
+          <a-table-column title="课程" :width="160" ellipsis tooltip>
+            <template #cell="{ record }">{{ courseName(record.courseId) }}</template>
+          </a-table-column>
+          <a-table-column title="班级" :width="140" ellipsis tooltip>
+            <template #cell="{ record }">{{ className(record.classId) }}</template>
+          </a-table-column>
+          <a-table-column title="教师" :width="140" ellipsis tooltip>
+            <template #cell="{ record }">{{ teacherName(record.teacherId) }}</template>
+          </a-table-column>
           <a-table-column title="剩余次数" data-index="remainingCount" :width="100" align="center" />
           <a-table-column title="有效期" :width="220">
             <template #cell="{ record }">{{ record.validFrom || "-" }} 至 {{ record.validTo || "-" }}</template>
@@ -81,20 +97,30 @@
       @close="resetForm"
     >
       <a-form ref="formRef" :model="formModel" :rules="rules" :layout="layoutMode.layout" auto-label-width>
-        <a-form-item field="studentId" label="学生ID">
-          <a-input-number v-model="formModel.studentId" :min="1" placeholder="请输入学生ID" />
+        <a-form-item field="studentId" label="学生">
+          <a-select v-model="formModel.studentId" placeholder="选择学生" allow-search allow-clear>
+            <a-option v-for="item in studentOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="productId" label="产品ID">
-          <a-input-number v-model="formModel.productId" :min="0" placeholder="可选" />
+        <a-form-item field="productId" label="产品">
+          <a-select v-model="formModel.productId" placeholder="选择产品，可选" allow-search allow-clear>
+            <a-option v-for="item in productOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="courseId" label="课程ID">
-          <a-input-number v-model="formModel.courseId" :min="1" placeholder="请输入课程ID" />
+        <a-form-item field="courseId" label="课程">
+          <a-select v-model="formModel.courseId" placeholder="选择课程" allow-search allow-clear>
+            <a-option v-for="item in courseOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="classId" label="班级ID">
-          <a-input-number v-model="formModel.classId" :min="0" placeholder="0 表示不限班级" />
+        <a-form-item field="classId" label="班级">
+          <a-select v-model="formModel.classId" placeholder="选择班级，可选" allow-search allow-clear>
+            <a-option v-for="item in classOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="teacherId" label="教师ID">
-          <a-input-number v-model="formModel.teacherId" :min="0" placeholder="0 表示不限教师" />
+        <a-form-item field="teacherId" label="教师">
+          <a-select v-model="formModel.teacherId" placeholder="选择教师，可选" allow-search allow-clear>
+            <a-option v-for="item in teacherOptions" :key="item.id" :value="item.id">{{ teacherLabel(item) }}</a-option>
+          </a-select>
         </a-form-item>
         <a-form-item field="benefitType" label="权益类型">
           <a-select v-model="formModel.benefitType">
@@ -136,17 +162,25 @@
     <a-drawer v-model:visible="checkVisible" :width="isMobile ? '100%' : 560" :footer="false">
       <template #title>权益校验</template>
       <a-form :model="checkForm" layout="vertical">
-        <a-form-item field="studentId" label="学生ID">
-          <a-input-number v-model="checkForm.studentId" :min="1" />
+        <a-form-item field="studentId" label="学生">
+          <a-select v-model="checkForm.studentId" placeholder="选择学生" allow-search allow-clear>
+            <a-option v-for="item in studentOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="courseId" label="课程ID">
-          <a-input-number v-model="checkForm.courseId" :min="1" />
+        <a-form-item field="courseId" label="课程">
+          <a-select v-model="checkForm.courseId" placeholder="选择课程" allow-search allow-clear>
+            <a-option v-for="item in courseOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="classId" label="班级ID">
-          <a-input-number v-model="checkForm.classId" :min="0" />
+        <a-form-item field="classId" label="班级">
+          <a-select v-model="checkForm.classId" placeholder="选择班级，可选" allow-search allow-clear>
+            <a-option v-for="item in classOptions" :key="item.id" :value="item.id">{{ item.name }}</a-option>
+          </a-select>
         </a-form-item>
-        <a-form-item field="teacherId" label="教师ID">
-          <a-input-number v-model="checkForm.teacherId" :min="0" />
+        <a-form-item field="teacherId" label="教师">
+          <a-select v-model="checkForm.teacherId" placeholder="选择教师，可选" allow-search allow-clear>
+            <a-option v-for="item in teacherOptions" :key="item.id" :value="item.id">{{ teacherLabel(item) }}</a-option>
+          </a-select>
         </a-form-item>
         <a-button type="primary" :loading="checking" @click="handleCheck">执行校验</a-button>
       </a-form>
@@ -186,9 +220,19 @@ import {
   checkEduStudentBenefitAPI,
   editEduStudentBenefitAPI,
   getEduBenefitExternalSyncListAPI,
+  getEduBenefitProductOptionsAPI,
+  getEduClassListAPI,
+  getEduClassTeacherOptionsAPI,
+  getEduCourseOptionsAPI,
+  getEduStudentListAPI,
   getEduStudentBenefitListAPI,
   repairEduStudentBenefitScheduleAPI,
   retryEduBenefitExternalSyncAPI,
+  type EduBenefitProductItem,
+  type EduClassItem,
+  type EduCourseOptionItem,
+  type EduStudentItem,
+  type EduTeacherOptionItem,
   type EduBenefitExternalSyncItem,
   type EduStudentBenefitAddParams,
   type EduStudentBenefitItem,
@@ -213,6 +257,11 @@ const layoutMode = computed(() => ({
 
 const loading = ref(false);
 const dataList = ref<EduStudentBenefitItem[]>([]);
+const studentOptions = ref<EduStudentItem[]>([]);
+const courseOptions = ref<EduCourseOptionItem[]>([]);
+const productOptions = ref<EduBenefitProductItem[]>([]);
+const classOptions = ref<EduClassItem[]>([]);
+const teacherOptions = ref<EduTeacherOptionItem[]>([]);
 const searchForm = reactive<EduStudentBenefitListParams>({});
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true });
 
@@ -237,10 +286,36 @@ const modalVisible = ref(false);
 const formRef = ref();
 const formModel = ref<StudentBenefitForm>(emptyForm());
 const rules: Record<string, any> = {
-  studentId: [{ required: true, message: "请输入学生ID" }],
-  courseId: [{ required: true, message: "请输入课程ID" }],
+  studentId: [{ required: true, message: "请选择学生" }],
+  courseId: [{ required: true, message: "请选择课程" }],
   benefitType: [{ required: true, message: "请选择权益类型" }],
   calculationMode: [{ required: true, message: "请选择核算方式" }],
+};
+
+const displayId = (id?: number) => (id ? `ID:${id}` : "-");
+const studentName = (id?: number) => studentOptions.value.find((item) => item.id === id)?.name ?? displayId(id);
+const courseName = (id?: number) => courseOptions.value.find((item) => item.id === id)?.name ?? displayId(id);
+const productName = (id?: number) => productOptions.value.find((item) => item.id === id)?.name ?? displayId(id);
+const className = (id?: number) => classOptions.value.find((item) => item.id === id)?.name ?? displayId(id);
+const teacherLabel = (item: EduTeacherOptionItem) => item.name || item.nickName || item.username;
+const teacherName = (id?: number) => {
+  const item = teacherOptions.value.find((option) => option.id === id);
+  return item ? teacherLabel(item) : displayId(id);
+};
+
+const fetchOptions = async () => {
+  const [students, courses, products, classes, teachers] = await Promise.all([
+    getEduStudentListAPI({ pageNum: 1, pageSize: 500 }),
+    getEduCourseOptionsAPI(),
+    getEduBenefitProductOptionsAPI(),
+    getEduClassListAPI({ pageNum: 1, pageSize: 500 }),
+    getEduClassTeacherOptionsAPI(),
+  ]);
+  studentOptions.value = students.data.list;
+  courseOptions.value = courses.data.list;
+  productOptions.value = products.data.list;
+  classOptions.value = classes.data.list;
+  teacherOptions.value = teachers.data.list;
 };
 
 const fetchList = async () => {
@@ -286,6 +361,15 @@ const handleCreate = () => {
 
 const handleEdit = (record: TableData) => {
   formModel.value = { ...emptyForm(), ...(record as EduStudentBenefitItem) };
+  if (!formModel.value.productId) {
+    formModel.value.productId = undefined;
+  }
+  if (!formModel.value.classId) {
+    formModel.value.classId = undefined;
+  }
+  if (!formModel.value.teacherId) {
+    formModel.value.teacherId = undefined;
+  }
   modalVisible.value = true;
 };
 
@@ -294,11 +378,19 @@ const resetForm = () => {
   formModel.value = emptyForm();
 };
 
+const buildPayload = () => {
+  const payload = { ...formModel.value };
+  payload.productId = payload.productId || 0;
+  payload.classId = payload.classId || 0;
+  payload.teacherId = payload.teacherId || 0;
+  return payload;
+};
+
 const handleSave = async () => {
   try {
     const errors = await formRef.value?.validate?.();
     if (errors) return false;
-    const payload = formModel.value;
+    const payload = buildPayload();
     if (payload.id) {
       await editEduStudentBenefitAPI({ ...payload, id: payload.id });
     } else {
@@ -315,7 +407,7 @@ const handleSave = async () => {
 
 const checkVisible = ref(false);
 const checking = ref(false);
-const checkForm = reactive({ studentId: undefined as unknown as number, courseId: undefined as unknown as number, classId: 0, teacherId: 0 });
+const checkForm = reactive({ studentId: undefined as unknown as number, courseId: undefined as unknown as number, classId: undefined as unknown as number | undefined, teacherId: undefined as unknown as number | undefined });
 const checkResult = ref<CheckResult | null>(null);
 const checkResultRows = computed(() => {
   if (!checkResult.value) return [];
@@ -329,7 +421,7 @@ const openCheckDrawer = () => {
 
 const handleCheck = async () => {
   if (!checkForm.studentId || !checkForm.courseId) {
-    Message.warning("请输入学生ID和课程ID");
+    Message.warning("请选择学生和课程");
     return;
   }
   checking.value = true;
@@ -369,7 +461,10 @@ const retrySync = async (id: number) => {
   await openExternalSyncDrawer();
 };
 
-onMounted(fetchList);
+onMounted(async () => {
+  await fetchOptions();
+  await fetchList();
+});
 </script>
 
 <style scoped lang="scss">

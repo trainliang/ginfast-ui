@@ -40,6 +40,7 @@ export interface EduStudentItem {
   school?: string;
   grade?: string;
   schoolClass?: string;
+  studentType?: string;
   sourceChannel?: string;
   enrollDate?: string | null;
   healthNote?: string;
@@ -61,6 +62,7 @@ export interface EduStudentListParams {
   school?: string;
   grade?: string;
   schoolClass?: string;
+  studentType?: string;
   sourceChannel?: string;
   emergencyContact?: string;
 }
